@@ -273,3 +273,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# AI Code Generation System
+.backups/
+.temp/
+docs/features/*_data.json

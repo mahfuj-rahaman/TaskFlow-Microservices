@@ -87,6 +87,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ArchitectureTests", "Archit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskFlow.ArchitectureTests", "tests\ArchitectureTests\TaskFlow.ArchitectureTests\TaskFlow.ArchitectureTests.csproj", "{738A5EAE-1425-4A0F-B0A8-B9031D11161A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -502,5 +504,8 @@ Global
 		{D5EFF54E-8FEC-4C51-9582-D0F02CFB74E1} = {30785934-E017-5D9F-2777-3D61460A5281}
 		{8AD23086-AE11-148E-B2B6-9F0F94287E0D} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{738A5EAE-1425-4A0F-B0A8-B9031D11161A} = {8AD23086-AE11-148E-B2B6-9F0F94287E0D}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EFEBE274-114C-4A77-B9AC-BB71867FEB26}
 	EndGlobalSection
 EndGlobal
