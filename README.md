@@ -253,31 +253,57 @@ Docker Desktop
 Visual Studio 2022 / Rider / VS Code
 ```
 
-### Quick Start (Local Development)
+### Quick Start (Docker - Recommended)
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/mahfuj/TaskFlow-Microservices.git
 cd TaskFlow-Microservices
 
-# 2. Start dependencies (PostgreSQL + Redis + Message Broker)
-docker-compose up -d
+# 2. Copy environment variables
+cp .env.example .env
+
+# 3. Start all services with Docker
+docker-compose -f docker-compose.yml -f docker-compose.local.yml up --build
+
+# 4. Access services
+# Task API: http://localhost:5001
+# Swagger UI: http://localhost:5001/swagger
+# Health Check: http://localhost:5001/health
+# RabbitMQ Management: http://localhost:15672 (rabbitmq/rabbitmq)
+
+# 5. Stop services
+docker-compose -f docker-compose.yml -f docker-compose.local.yml down
+```
+
+### Quick Start (Manual Development)
+
+```bash
+# 1. Clone repository
+git clone https://github.com/mahfuj/TaskFlow-Microservices.git
+cd TaskFlow-Microservices
+
+# 2. Start dependencies (PostgreSQL + Redis + RabbitMQ)
+docker-compose up postgres redis rabbitmq -d
 
 # 3. Run database migrations
-dotnet ef database update --project src/Services/Task/TaskFlow.Task.Infrastructure
+cd src/Services/Task/TaskFlow.Task.Infrastructure
+dotnet ef database update --startup-project ../TaskFlow.Task.API
 
-# 4. Start all services
-./scripts/start-services.sh
-# Or individually:
-# dotnet run --project src/Services/Task/TaskFlow.Task.API
-# dotnet run --project src/Services/User/TaskFlow.User.API
-# dotnet run --project src/ApiGateway/TaskFlow.Gateway
+# 4. Start Task Service
+cd ../TaskFlow.Task.API
+dotnet run
 
 # 5. Access
-# API Gateway: http://localhost:7000
-# Task Service: http://localhost:7001/swagger
-# Blazor App: http://localhost:7100
+# Task Service: http://localhost:5001/swagger
 ```
+
+### Docker Documentation
+
+For detailed Docker setup, configuration, and troubleshooting:
+- **Quick Start:** [DOCKER-QUICKSTART.md](DOCKER-QUICKSTART.md)
+- **Full Guide:** [DOCKER.md](DOCKER.md)
+- **Testing Guide:** [DOCKER-TEST.md](DOCKER-TEST.md)
 
 ### Configuration
 

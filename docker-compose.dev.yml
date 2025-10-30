@@ -1,0 +1,51 @@
+# Development environment override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+version: '3.8'
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_postgres_pass}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-taskflow}
+
+  redis:
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-dev_redis_pass}
+
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-dev_rabbitmq}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-dev_rabbitmq_pass}
+
+  task-service:
+    build:
+      context: .
+      dockerfile: src/Services/Task/Dockerfile
+      target: final
+    ports:
+      - "5001:8080"
+      - "5002:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__TaskDb=Host=postgres;Port=5432;Database=taskflow_task;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-dev_postgres_pass}
+      - DatabaseProvider=PostgreSQL
+      - Redis__ConnectionString=redis:6379,password=${REDIS_PASSWORD:-dev_redis_pass}
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=${RABBITMQ_USER:-dev_rabbitmq}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-dev_rabbitmq_pass}
+      - EnableSensitiveDataLogging=true
+      - Serilog__MinimumLevel__Default=Debug
+    volumes:
+      - task_logs:/app/logs
+    restart: always
+
+volumes:
+  task_logs:
+    name: taskflow-task-logs-dev

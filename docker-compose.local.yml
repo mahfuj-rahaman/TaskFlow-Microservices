@@ -1,0 +1,57 @@
+# Local development environment override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.local.yml up
+version: '3.8'
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+
+  redis:
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass redis123
+
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+
+  task-service:
+    build:
+      context: .
+      dockerfile: src/Services/Task/Dockerfile
+      target: final
+    ports:
+      - "5001:8080"
+      - "5002:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__TaskDb=Host=postgres;Port=5432;Database=taskflow_task;Username=postgres;Password=postgres
+      - DatabaseProvider=PostgreSQL
+      - Redis__ConnectionString=redis:6379,password=redis123
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=rabbitmq
+      - RabbitMQ__Password=rabbitmq
+      - EnableSensitiveDataLogging=true
+    volumes:
+      # Hot reload for development (uncomment if using watch mode)
+      # - ./src/Services/Task:/src/Services/Task
+      - task_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  task_logs:
+    name: taskflow-task-logs-local
