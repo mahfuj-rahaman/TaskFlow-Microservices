@@ -54,22 +54,23 @@ public sealed class ${FEATURE_NAME}Repository : I${FEATURE_NAME}Repository
         CancellationToken cancellationToken = default)
     {
         await _context.Set<${FEATURE_NAME}Entity>().AddAsync(entity, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public Task UpdateAsync(
+    public async Task UpdateAsync(
         ${FEATURE_NAME}Entity entity,
         CancellationToken cancellationToken = default)
     {
         _context.Set<${FEATURE_NAME}Entity>().Update(entity);
-        return Task.CompletedTask;
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public Task DeleteAsync(
+    public async Task DeleteAsync(
         ${FEATURE_NAME}Entity entity,
         CancellationToken cancellationToken = default)
     {
         _context.Set<${FEATURE_NAME}Entity>().Remove(entity);
-        return Task.CompletedTask;
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(

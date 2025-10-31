@@ -109,12 +109,14 @@ source "$SCRIPT_DIR/generators/generate-application.sh"
 source "$SCRIPT_DIR/generators/generate-infrastructure.sh"
 source "$SCRIPT_DIR/generators/generate-api.sh"
 source "$SCRIPT_DIR/generators/generate-tests.sh"
+source "$SCRIPT_DIR/generators/generate-projects.sh"
 
 # Generate Domain Layer
 print_section "Generating Domain Layer"
 generate_domain_entity "$FEATURE_NAME" "$SERVICE_NAME" "$DOMAIN_PATH"
 generate_domain_events "$FEATURE_NAME" "$SERVICE_NAME" "$DOMAIN_PATH"
 generate_domain_exceptions "$FEATURE_NAME" "$SERVICE_NAME" "$DOMAIN_PATH"
+generate_domain_enums "$FEATURE_NAME" "$SERVICE_NAME" "$DOMAIN_PATH"
 
 # Generate Application Layer
 print_section "Generating Application Layer"
@@ -137,6 +139,13 @@ generate_controller "$FEATURE_NAME" "$SERVICE_NAME" "$API_PATH"
 print_section "Generating Tests"
 generate_unit_tests "$FEATURE_NAME" "$SERVICE_NAME" "$TESTS_PATH"
 generate_integration_tests "$FEATURE_NAME" "$SERVICE_NAME" "$TESTS_PATH"
+
+# Generate Project Files (.csproj)
+print_section "Generating Project Files"
+generate_domain_csproj "$SERVICE_NAME" "$DOMAIN_PATH"
+generate_application_csproj "$SERVICE_NAME" "$APP_PATH"
+generate_infrastructure_csproj "$SERVICE_NAME" "$INFRA_PATH"
+generate_api_csproj "$SERVICE_NAME" "$API_PATH"
 
 # Summary
 print_section "Generation Complete!"

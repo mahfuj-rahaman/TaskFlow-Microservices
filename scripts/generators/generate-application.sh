@@ -22,7 +22,7 @@ namespace TaskFlow.$SERVICE_NAME.Application.DTOs;
 public sealed record ${FEATURE_NAME}Dto
 {
     public Guid Id { get; init; }
-    public string Name { get; init; } = string.Empty;
+    // TODO: Add properties based on ${FEATURE_NAME}Entity
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
 }
@@ -109,7 +109,7 @@ namespace TaskFlow.$SERVICE_NAME.Application.Features.${FEATURE_NAME}s.Commands.
 /// </summary>
 public sealed record Create${FEATURE_NAME}Command : IRequest<Result<Guid>>
 {
-    public required string Name { get; init; }
+    // TODO: Add required properties for creating ${FEATURE_NAME}
 }
 EOF
 
@@ -128,24 +128,20 @@ namespace TaskFlow.$SERVICE_NAME.Application.Features.${FEATURE_NAME}s.Commands.
 public sealed class Create${FEATURE_NAME}CommandHandler : IRequestHandler<Create${FEATURE_NAME}Command, Result<Guid>>
 {
     private readonly I${FEATURE_NAME}Repository _repository;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public Create${FEATURE_NAME}CommandHandler(
-        I${FEATURE_NAME}Repository repository,
-        IUnitOfWork unitOfWork)
+    public Create${FEATURE_NAME}CommandHandler(I${FEATURE_NAME}Repository repository)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<Guid>> Handle(
         Create${FEATURE_NAME}Command request,
         CancellationToken cancellationToken)
     {
-        var entity = ${FEATURE_NAME}Entity.Create(request.Name);
+        // TODO: Customize entity creation with actual properties from request
+        var entity = ${FEATURE_NAME}Entity.Create();
 
         await _repository.AddAsync(entity, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success(entity.Id);
     }
@@ -165,11 +161,7 @@ public sealed class Create${FEATURE_NAME}CommandValidator : AbstractValidator<Cr
 {
     public Create${FEATURE_NAME}CommandValidator()
     {
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .WithMessage("Name is required")
-            .MaximumLength(200)
-            .WithMessage("Name must not exceed 200 characters");
+        // TODO: Add validation rules for Create${FEATURE_NAME}Command properties
     }
 }
 EOF
@@ -194,7 +186,7 @@ namespace TaskFlow.$SERVICE_NAME.Application.Features.${FEATURE_NAME}s.Commands.
 public sealed record Update${FEATURE_NAME}Command : IRequest<Result>
 {
     public required Guid Id { get; init; }
-    public required string Name { get; init; }
+    // TODO: Add properties to update for ${FEATURE_NAME}
 }
 EOF
 
@@ -212,14 +204,10 @@ namespace TaskFlow.$SERVICE_NAME.Application.Features.${FEATURE_NAME}s.Commands.
 public sealed class Update${FEATURE_NAME}CommandHandler : IRequestHandler<Update${FEATURE_NAME}Command, Result>
 {
     private readonly I${FEATURE_NAME}Repository _repository;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public Update${FEATURE_NAME}CommandHandler(
-        I${FEATURE_NAME}Repository repository,
-        IUnitOfWork unitOfWork)
+    public Update${FEATURE_NAME}CommandHandler(I${FEATURE_NAME}Repository repository)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(
@@ -235,10 +223,10 @@ public sealed class Update${FEATURE_NAME}CommandHandler : IRequestHandler<Update
                 "$FEATURE_NAME not found"));
         }
 
-        entity.Update(request.Name);
+        // TODO: Customize entity update with actual properties from request
+        entity.Update();
 
         await _repository.UpdateAsync(entity, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
@@ -262,11 +250,7 @@ public sealed class Update${FEATURE_NAME}CommandValidator : AbstractValidator<Up
             .NotEmpty()
             .WithMessage("Id is required");
 
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .WithMessage("Name is required")
-            .MaximumLength(200)
-            .WithMessage("Name must not exceed 200 characters");
+        // TODO: Add validation rules for Update${FEATURE_NAME}Command properties
     }
 }
 EOF
@@ -305,14 +289,10 @@ namespace TaskFlow.$SERVICE_NAME.Application.Features.${FEATURE_NAME}s.Commands.
 public sealed class Delete${FEATURE_NAME}CommandHandler : IRequestHandler<Delete${FEATURE_NAME}Command, Result>
 {
     private readonly I${FEATURE_NAME}Repository _repository;
-    private readonly IUnitOfWork _unitOfWork;
 
-    public Delete${FEATURE_NAME}CommandHandler(
-        I${FEATURE_NAME}Repository repository,
-        IUnitOfWork unitOfWork)
+    public Delete${FEATURE_NAME}CommandHandler(I${FEATURE_NAME}Repository repository)
     {
         _repository = repository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result> Handle(
@@ -331,7 +311,6 @@ public sealed class Delete${FEATURE_NAME}CommandHandler : IRequestHandler<Delete
         entity.Delete();
 
         await _repository.DeleteAsync(entity, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }
@@ -480,7 +459,7 @@ public static class ${FEATURE_NAME}MappingConfig
         TypeAdapterConfig<${FEATURE_NAME}Entity, ${FEATURE_NAME}Dto>
             .NewConfig()
             .Map(dest => dest.Id, src => src.Id)
-            .Map(dest => dest.Name, src => src.Name)
+            // TODO: Add property mappings
             .Map(dest => dest.CreatedAt, src => src.CreatedAt)
             .Map(dest => dest.UpdatedAt, src => src.UpdatedAt);
     }

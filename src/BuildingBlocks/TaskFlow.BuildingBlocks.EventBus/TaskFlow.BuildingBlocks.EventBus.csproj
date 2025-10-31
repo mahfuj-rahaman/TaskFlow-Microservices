@@ -8,6 +8,13 @@
 
   <ItemGroup>
     <PackageReference Include="MassTransit" Version="8.2.5" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TaskFlow.BuildingBlocks.Common\TaskFlow.BuildingBlocks.Common.csproj" />
   </ItemGroup>
 
 </Project>
