@@ -59,6 +59,17 @@ services:
       timeout: 5s
       retries: 5
 
+  # Consul Service Discovery
+  consul:
+    image: consul:1.18
+    container_name: taskflow-consul
+    restart: unless-stopped
+    ports:
+      - "8500:8500"
+    networks:
+      - taskflow-network
+    command: "agent -server -bootstrap-expect=1 -ui -client=0.0.0.0"
+
   # Task Service
   task-service:
     build:

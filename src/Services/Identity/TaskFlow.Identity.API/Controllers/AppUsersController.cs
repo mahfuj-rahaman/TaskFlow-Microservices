@@ -1,5 +1,5 @@
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using TaskFlow.BuildingBlocks.Mediator.Abstractions;
 using TaskFlow.Identity.Application.DTOs;
 using TaskFlow.Identity.Application.Features.AppUsers.Commands.CreateAppUser;
 using TaskFlow.Identity.Application.Features.AppUsers.Commands.UpdateAppUser;
@@ -17,11 +17,11 @@ namespace TaskFlow.Identity.API.Controllers;
 [Produces("application/json")]
 public class AppUsersController : ApiController
 {
-    private readonly ISender _sender;
+    private readonly IDispatcher _dispatcher;
 
-    public AppUsersController(ISender sender)
+    public AppUsersController(IDispatcher dispatcher)
     {
-        _sender = sender;
+        _dispatcher = dispatcher;
     }
 
     /// <summary>
@@ -33,7 +33,7 @@ public class AppUsersController : ApiController
     public async Task<IActionResult> GetAllAppUsers(CancellationToken cancellationToken)
     {
         var query = new GetAllAppUsersQuery();
-        var result = await _sender.Send(query, cancellationToken);
+        var result = await _dispatcher.QueryAsync<GetAllAppUsersQuery, IReadOnlyList<AppUserDto>>(query, cancellationToken);
         return Ok(result);
     }
 
@@ -50,7 +50,7 @@ public class AppUsersController : ApiController
     public async Task<IActionResult> GetAppUserById(Guid id, CancellationToken cancellationToken)
     {
         var query = new GetAppUserByIdQuery(id);
-        var result = await _sender.Send(query, cancellationToken);
+        var result = await _dispatcher.QueryAsync<GetAppUserByIdQuery, AppUserDto>(query, cancellationToken);
 
         if (result is null)
         {
@@ -74,7 +74,7 @@ public class AppUsersController : ApiController
         [FromBody] CreateAppUserCommand command,
         CancellationToken cancellationToken)
     {
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _dispatcher.SendAsync<CreateAppUserCommand, Guid>(command, cancellationToken);
 
         return HandleResult(result, id => CreatedAtAction(
             nameof(GetAppUserById),
@@ -105,7 +105,7 @@ public class AppUsersController : ApiController
             return BadRequest(new { message = "ID mismatch" });
         }
 
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _dispatcher.SendAsync(command, cancellationToken);
 
         return HandleResult(result);
     }
@@ -123,7 +123,7 @@ public class AppUsersController : ApiController
     public async Task<IActionResult> DeleteAppUser(Guid id, CancellationToken cancellationToken)
     {
         var command = new DeleteAppUserCommand(id);
-        var result = await _sender.Send(command, cancellationToken);
+        var result = await _dispatcher.SendAsync(command, cancellationToken);
 
         return HandleResult(result);
     }
