@@ -10,7 +10,7 @@
 
 **Production-grade distributed system implementing Clean Architecture, Domain-Driven Design, CQRS, Event Sourcing, and AI-powered code generation. Built for extreme scalability, maintainability, and cloud-agnostic deployment.**
 
-[Features](#-key-features) • [Architecture](#-architecture-overview) • [AI Generation](#-ai-powered-code-generation) • [Getting Started](#-quick-start) • [Documentation](#-documentation)
+[Features](#-key-features) • [Feature Specs](#-feature-specifications) • [Architecture](#-architecture-overview) • [AI Generation](#-ai-powered-code-generation) • [Getting Started](#-quick-start) • [Documentation](#-documentation)
 
 </div>
 
@@ -20,6 +20,12 @@
 
 - [Overview](#-overview)
 - [Key Features](#-key-features)
+- [Feature Specifications](#-feature-specifications)
+  - [Identity Feature](#1-identity-feature-appuser---authentication--authorization)
+  - [User Feature](#2-user-feature---profile-management--hierarchy)
+  - [Task Feature](#3-task-feature---task-management-system)
+  - [AdminUser Feature](#4-adminuser-feature---administrative-system)
+  - [Notification Feature](#5-notification-feature---real-time-notification-system)
 - [Architecture Overview](#-architecture-overview)
 - [AI-Powered Code Generation](#-ai-powered-code-generation)
 - [Technology Stack](#-technology-stack)
@@ -1516,6 +1522,121 @@ dotnet run --project src/Services/Catalog/TaskFlow.Catalog.API
 
 ---
 
+## 🎯 Feature Specifications
+
+TaskFlow includes **4 production-ready feature specifications** that demonstrate the complete system design:
+
+### 1. **Identity Feature (AppUser)** - Authentication & Authorization
+**Purpose**: Complete production-ready Identity system with JWT authentication, refresh tokens, email confirmation, password reset, and role-based access control.
+
+**Key Components**:
+- **AppUser Entity**: Username, Email, PasswordHash, EmailConfirmed, Roles, Permissions, RefreshTokens, TwoFactorAuth
+- **Security**: BCrypt password hashing, JWT access tokens (15min), Refresh tokens (7 days), Account lockout after 5 failed attempts
+- **Operations**: Register, Login, RefreshToken, Logout, ConfirmEmail, ForgotPassword, ResetPassword, ChangePassword
+- **Integration**: Links to UserEntity via UserEntityId (one-to-one relationship)
+
+**Specification Files**:
+- 📄 `docs/features/Identity_complete_specification.md` (669 lines)
+- 📄 `docs/features/Identity_data.json` (Complete JSON spec)
+
+### 2. **User Feature** - Profile Management & Hierarchy
+**Purpose**: User profile management with recursive Master-SubUser hierarchy, invitation system, permissions, and two-stage registration workflow.
+
+**Key Components**:
+- **UserEntity**: FirstName, LastName, DateOfBirth, PhoneNumber, ProfileCompleted, Master-SubUser relationships
+- **Two-Stage Registration**:
+  1. Registration → Creates AppUser (Identity)
+  2. Email confirmation → First login → Mandatory profile completion → Creates UserEntity
+- **Master-SubUser Hierarchy**: N:M self-referencing, one-directional Tree/DAG structure, cycle prevention with BFS/DFS
+- **Invitation System**: Email-based invitations with three scenarios (complete profile, registered but incomplete, new user)
+- **Permissions**: CanViewTasks, CanUpdateTasks, CanCreateTasks, CanDeleteTasks
+
+**Specification Files**:
+- 📄 `docs/features/User_complete_specification.md` (1200+ lines)
+- 📄 `docs/features/User_data.json` (Complete JSON spec)
+
+### 3. **Task Feature** - Task Management System
+**Purpose**: Complete task management with single-assignee model, reassignment, review system with star ratings, multi-user comments with attachments, and complete audit trail.
+
+**Key Components**:
+- **Task Entity**: Title, Description, Status, Priority, ComplexityLevel, EstimatedHours, ActualHours, AllowReassignment, RequiresReview, ReviewRating
+- **Single Assignee Model**: ONE assignee at a time with complete history tracking
+- **Reassignment Logic**: Controlled by AllowReassignment flag, creator can always reassign
+- **Review System**: Optional review with 1-5 star ratings and comments
+- **Comments**: Multi-user comments with attachments (images, videos, documents, max 50MB, 10 per comment)
+- **Audit Trail**: Complete TaskHistory tracking every action with time tracking
+- **Related Entities**: TaskAssignment, TaskComment (with CommentAttachment), TaskHistory
+
+**Specification Files**:
+- 📄 `docs/features/Task_complete_specification.md` (Comprehensive spec)
+- 📄 `docs/features/Task_data.json` (Complete JSON spec)
+
+### 4. **AdminUser Feature** - Administrative System
+
+
+
+**Purpose**: Production-ready admin system with SuperAdmin capabilities, user management (block/unblock/suspend), complete task oversight, and comprehensive audit trail.
+
+
+
+**Key Components**:
+
+- **AdminUser Entity**: AppUserId, UserEntityId (nullable), AdminRole, AdminStatus, Permissions, Actions (audit trail)
+
+- **Admin Hierarchy**:
+
+  - **SuperAdmin**: Default admin (ONE per system), cannot be demoted/suspended/blocked, has ALL permissions
+
+  - **Admin**: Promoted by SuperAdmin, can manage users/tasks but not other admins
+
+- **User Management**: Block, Unblock, Suspend, Activate users with session revocation
+
+- **Task Management**: View all tasks (bypasses permissions), Dismiss (soft delete), Suspend/Unsuspend tasks
+
+- **Permissions**: 11 granular permissions (BlockUsers, ViewAllTasks, DismissTasks, PromoteToAdmin, etc.)
+
+- **Audit Trail**: Complete AdminAction log with IP tracking, 7-year retention for compliance
+
+
+
+**Specification Files**:
+
+- 📄 `docs/features/AdminUser_complete_specification.md` (3500+ lines)
+
+- 📄 `docs/features/AdminUser_data.json` (Complete JSON spec)
+
+
+
+### 5. **Notification Feature** - Real-time Notification System
+
+
+
+**Purpose**: Production-ready notification system handling real-time and asynchronous notifications for task updates, user invitations, admin actions, and system events across multiple channels (email, SMS, in-app, push notifications).
+
+
+
+**Key Components**:
+
+- **Notification Entity**: Recipient, Type, Category, Title, Message, ActionUrl, Status, Delivery channels
+
+- **Multi-Channel Delivery**: Email, In-App (real-time with SignalR), Push Notifications, SMS
+
+- **User Preferences**: Granular control over which notifications to receive and on which channels
+
+- **Retry Logic**: Exponential backoff for failed deliveries
+
+- **Event-Driven**: Decoupled from other services, consumes integration events
+
+
+
+**Specification Files**:
+
+- 📄 `docs/features/Notification_complete_specification.md` (Comprehensive spec)
+
+- 📄 `docs/features/Notification_data.json` (Complete JSON spec)
+
+---
+
 ## 📂 Project Structure
 
 ```
@@ -1523,20 +1644,26 @@ TaskFlow-Microservices/
 │
 ├── 📁 src/
 │   ├── 📁 Services/                           # Microservices
-│   │   ├── 📁 User/                           # User service
-│   │   │   ├── TaskFlow.User.Domain/          # ✅ Implemented
-│   │   │   ├── TaskFlow.User.Application/     # 🚧 In progress
-│   │   │   ├── TaskFlow.User.Infrastructure/  # 🚧 In progress
-│   │   │   └── TaskFlow.User.API/             # 🚧 In progress
+│   │   ├── 📁 User/                           # User service (Identity + User + AdminUser)
+│   │   │   ├── TaskFlow.User.Domain/          # ✅ Domain entities ready
+│   │   │   ├── TaskFlow.User.Application/     # 📋 Ready for generation
+│   │   │   ├── TaskFlow.User.Infrastructure/  # 📋 Ready for generation
+│   │   │   └── TaskFlow.User.API/             # 📋 Ready for generation
 │   │   │
-│   │   ├── 📁 Catalog/                        # Catalog service
-│   │   │   ├── TaskFlow.Catalog.Domain/       # 📋 Ready for generation
+│   │   ├── 📁 Task/                           # Task service
+│   │   │   ├── TaskFlow.Task.Domain/          # 📋 Ready for generation
+│   │   │   ├── TaskFlow.Task.Application/     # 📋 Ready for generation
+│   │   │   ├── TaskFlow.Task.Infrastructure/  # 📋 Ready for generation
+│   │   │   └── TaskFlow.Task.API/             # 📋 Ready for generation
+│   │   │
+│   │   ├── 📁 Catalog/                        # Catalog service (Example)
+│   │   │   ├── TaskFlow.Catalog.Domain/
 │   │   │   ├── TaskFlow.Catalog.Application/
 │   │   │   ├── TaskFlow.Catalog.Infrastructure/
 │   │   │   └── TaskFlow.Catalog.API/
 │   │   │
-│   │   ├── 📁 Order/                          # Order service
-│   │   └── 📁 Notification/                   # Notification service
+│   │   ├── 📁 Order/                          # Order service (Example)
+│   │   └── 📁 Notification/                   # Notification service (Example)
 │   │
 │   ├── 📁 Gateway/
 │   │   └── TaskFlow.Gateway/                  # API Gateway (Ocelot/YARP)
@@ -1568,9 +1695,15 @@ TaskFlow-Microservices/
 │   ├── AI_SCAFFOLDING_GUIDE.md               # Scaffolding guide
 │   ├── FEATURE_UPDATE_GUIDE.md               # Update guide
 │   ├── UPDATE_PARADOX_SOLVED.md              # ⭐ Update paradox solution
-│   └── 📁 features/
-│       ├── Identity_feature_example.md        # Real-world example
-│       └── Product_data.json                  # Sample specification
+│   └── 📁 features/                          # ⭐⭐⭐ Feature Specifications
+│       ├── Identity_complete_specification.md # Authentication & Authorization (669 lines)
+│       ├── Identity_data.json                 # Identity JSON spec
+│       ├── User_complete_specification.md     # Profile & Hierarchy (1200+ lines)
+│       ├── User_data.json                     # User JSON spec
+│       ├── Task_complete_specification.md     # Task Management (comprehensive)
+│       ├── Task_data.json                     # Task JSON spec
+│       ├── AdminUser_complete_specification.md # Admin System (3500+ lines)
+│       └── AdminUser_data.json                # AdminUser JSON spec
 │
 ├── 📁 infrastructure/                         # IaC (Terraform)
 │   └── 📁 terraform/
@@ -1715,7 +1848,15 @@ terraform output task_service_url
 | **[docs/AI_SCAFFOLDING_GUIDE.md](docs/AI_SCAFFOLDING_GUIDE.md)** | AI scaffolding guide |
 | **[docs/FEATURE_UPDATE_GUIDE.md](docs/FEATURE_UPDATE_GUIDE.md)** | Update existing features |
 | **[docs/UPDATE_PARADOX_SOLVED.md](docs/UPDATE_PARADOX_SOLVED.md)** | ⭐ Update paradox solution |
-| **[docs/features/Identity_feature_example.md](docs/features/Identity_feature_example.md)** | Real-world example |
+
+### Feature Specifications (Production-Ready Examples)
+
+| Feature | Specification | JSON Spec | Description |
+|---------|--------------|-----------|-------------|
+| **Identity (AppUser)** | [Identity_complete_specification.md](docs/features/Identity_complete_specification.md) | [Identity_data.json](docs/features/Identity_data.json) | Authentication & Authorization system with JWT, refresh tokens, email confirmation, password reset, 2FA |
+| **User** | [User_complete_specification.md](docs/features/User_complete_specification.md) | [User_data.json](docs/features/User_data.json) | Profile management with Master-SubUser hierarchy, invitation system, two-stage registration |
+| **Task** | [Task_complete_specification.md](docs/features/Task_complete_specification.md) | [Task_data.json](docs/features/Task_data.json) | Task management with single-assignee, reassignment, review system, comments with attachments, audit trail |
+| **AdminUser** | [AdminUser_complete_specification.md](docs/features/AdminUser_complete_specification.md) | [AdminUser_data.json](docs/features/AdminUser_data.json) | Admin system with SuperAdmin, user/task management, permissions, audit trail |
 
 ### AI Context Files
 
@@ -1750,7 +1891,11 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 - ✅ Result Pattern
 - ✅ **AI-Powered Code Generation System** (99%+ faster development)
 - ✅ **Update Paradox Solution** (3-layer protection)
-- ✅ User Service (Domain layer implemented)
+- ✅ **Identity Feature Specification** (Authentication & Authorization - 669 lines)
+- ✅ **User Feature Specification** (Profile & Master-SubUser Hierarchy - 1200+ lines)
+- ✅ **Task Feature Specification** (Task Management with Comments & Audit - comprehensive)
+- ✅ **AdminUser Feature Specification** (Admin System with SuperAdmin - 3500+ lines)
+- ✅ User Service (Domain entities: AppUser, UserEntity, enums)
 - ✅ BuildingBlocks (Shared kernel)
 - ✅ Docker Compose setup
 - ✅ Multi-cloud abstraction (AWS, Azure, GCP)
@@ -1759,10 +1904,10 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ### 🚧 In Progress
 
-- 🚧 User Service (Application, Infrastructure, API layers)
-- 🚧 Catalog Service
-- 🚧 Order Service
-- 🚧 Notification Service
+- 🚧 Code generation for Identity feature (ready to generate)
+- 🚧 Code generation for User feature (ready to generate)
+- 🚧 Code generation for Task feature (ready to generate)
+- 🚧 Code generation for AdminUser feature (ready to generate)
 
 ### 📋 Planned
 
