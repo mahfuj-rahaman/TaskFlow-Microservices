@@ -11,7 +11,7 @@ public interface IEventBus
     /// Publishes a single domain event (in-process via MediatR and/or distributed via message bus)
     /// </summary>
     Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default)
-        where TEvent : IDomainEvent;
+        where TEvent : class, IDomainEvent;
 
     /// <summary>
     /// Publishes multiple domain events

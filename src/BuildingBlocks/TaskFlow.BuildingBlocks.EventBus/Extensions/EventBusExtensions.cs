@@ -1,12 +1,15 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using TaskFlow.BuildingBlocks.EventBus.Abstractions;
 using TaskFlow.BuildingBlocks.EventBus.Adapters;
+using TaskFlow.BuildingBlocks.EventBus.Adapters.Persistence;
 
 namespace TaskFlow.BuildingBlocks.EventBus.Extensions;
 
 /// <summary>
 /// Extension methods for registering EventBus services
 /// Framework-agnostic - supports any event publisher and message publisher
+/// Supports both in-memory and persistent (Outbox pattern) event delivery
 /// </summary>
 public static class EventBusExtensions
 {
@@ -203,6 +206,125 @@ public static class EventBusExtensions
     public static IServiceCollection AddEventBusWithNServiceBus(this IServiceCollection services)
     {
         return services.AddEventBus<NServiceBusEventPublisher, NServiceBusMessagePublisher>();
+    }
+
+    #endregion
+
+    // ============================================================================
+    // Persistent EventBus (Outbox Pattern) Extension Methods
+    // ============================================================================
+
+    #region Persistent EventBus Configuration
+
+    /// <summary>
+    /// Registers EventBus with Outbox pattern support using a custom event store
+    /// Supports InMemory, Persistent, and Hybrid modes
+    /// </summary>
+    /// <typeparam name="TEventPublisher">The in-process event publisher implementation</typeparam>
+    /// <typeparam name="TEventStore">The event store implementation for persistence</typeparam>
+    /// <param name="services">The service collection</param>
+    /// <param name="mode">The event bus mode (InMemory, Persistent, or Hybrid)</param>
+    /// <param name="processorOptions">Optional outbox processor configuration</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddPersistentEventBus<TEventPublisher, TEventStore>(
+        this IServiceCollection services,
+        EventBusMode mode = EventBusMode.Hybrid,
+        OutboxProcessorOptions? processorOptions = null)
+        where TEventPublisher : class, IEventPublisher
+        where TEventStore : class, IEventStore
+    {
+        // Register the event publisher
+        services.AddScoped<IEventPublisher, TEventPublisher>();
+
+        // Register the event store
+        services.AddScoped<IEventStore, TEventStore>();
+
+        // Register processor options
+        services.AddSingleton(processorOptions ?? new OutboxProcessorOptions());
+
+        // Register the outbox processor as a background service
+        services.AddHostedService<OutboxProcessor>();
+
+        // Register the outbox processor as IOutboxProcessor for manual control
+        services.AddSingleton<IOutboxProcessor, OutboxProcessor>();
+
+        // Register EventBus with the specified mode
+        services.AddScoped<IEventBus>(sp =>
+        {
+            var eventPublisher = sp.GetRequiredService<IEventPublisher>();
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<EventBus>>();
+            var eventStore = sp.GetRequiredService<IEventStore>();
+            var messagePublisher = sp.GetService<IMessagePublisher>();
+            var eventMapper = sp.GetService<IIntegrationEventMapper>();
+
+            return new EventBus(eventPublisher, logger, eventStore, messagePublisher, eventMapper, mode);
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers EventBus with Outbox pattern using MediatR and EF Core
+    /// Most common production configuration
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="mode">The event bus mode (default: Hybrid)</param>
+    /// <param name="processorOptions">Optional outbox processor configuration</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddPersistentEventBusWithMediatRAndEfCore(
+        this IServiceCollection services,
+        EventBusMode mode = EventBusMode.Hybrid,
+        OutboxProcessorOptions? processorOptions = null)
+    {
+        return services.AddPersistentEventBus<MediatREventPublisher, EfCoreEventStore>(mode, processorOptions);
+    }
+
+    /// <summary>
+    /// Registers EventBus with Outbox pattern using MediatR and SQL (ADO.NET)
+    /// For scenarios where EF Core is not desired
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="mode">The event bus mode (default: Hybrid)</param>
+    /// <param name="processorOptions">Optional outbox processor configuration</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddPersistentEventBusWithMediatRAndSql(
+        this IServiceCollection services,
+        EventBusMode mode = EventBusMode.Hybrid,
+        OutboxProcessorOptions? processorOptions = null)
+    {
+        return services.AddPersistentEventBus<MediatREventPublisher, SqlEventStore>(mode, processorOptions);
+    }
+
+    /// <summary>
+    /// Registers EventBus with Outbox pattern using InMemoryEventPublisher and EF Core
+    /// Zero framework dependencies for event publishing
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="mode">The event bus mode (default: Hybrid)</param>
+    /// <param name="processorOptions">Optional outbox processor configuration</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddPersistentEventBusWithInMemoryAndEfCore(
+        this IServiceCollection services,
+        EventBusMode mode = EventBusMode.Hybrid,
+        OutboxProcessorOptions? processorOptions = null)
+    {
+        return services.AddPersistentEventBus<InMemoryEventPublisher, EfCoreEventStore>(mode, processorOptions);
+    }
+
+    /// <summary>
+    /// Registers EventBus with Outbox pattern using Wolverine and EF Core
+    /// High-performance event handling with persistence
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="mode">The event bus mode (default: Hybrid)</param>
+    /// <param name="processorOptions">Optional outbox processor configuration</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddPersistentEventBusWithWolverineAndEfCore(
+        this IServiceCollection services,
+        EventBusMode mode = EventBusMode.Hybrid,
+        OutboxProcessorOptions? processorOptions = null)
+    {
+        return services.AddPersistentEventBus<WolverineEventPublisher, EfCoreEventStore>(mode, processorOptions);
     }
 
     #endregion
