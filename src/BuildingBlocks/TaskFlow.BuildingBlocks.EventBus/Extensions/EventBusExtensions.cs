@@ -328,4 +328,78 @@ public static class EventBusExtensions
     }
 
     #endregion
+
+    // ============================================================================
+    // NoSQL Database Adapters
+    // ============================================================================
+
+    #region NoSQL Persistence
+
+    /// <summary>
+    /// Registers EventBus with Outbox pattern using MediatR and MongoDB
+    /// For services using MongoDB as primary database
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="mode">The event bus mode (default: Hybrid)</param>
+    /// <param name="processorOptions">Optional outbox processor configuration</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddPersistentEventBusWithMediatRAndMongoDB(
+        this IServiceCollection services,
+        EventBusMode mode = EventBusMode.Hybrid,
+        OutboxProcessorOptions? processorOptions = null)
+    {
+        return services.AddPersistentEventBus<MediatREventPublisher, MongoDbEventStore>(mode, processorOptions);
+    }
+
+    /// <summary>
+    /// Registers EventBus with Outbox pattern using MediatR and Cassandra
+    /// For services using Cassandra/ScyllaDB as primary database
+    /// High-throughput, distributed event storage
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="mode">The event bus mode (default: Hybrid)</param>
+    /// <param name="processorOptions">Optional outbox processor configuration</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddPersistentEventBusWithMediatRAndCassandra(
+        this IServiceCollection services,
+        EventBusMode mode = EventBusMode.Hybrid,
+        OutboxProcessorOptions? processorOptions = null)
+    {
+        return services.AddPersistentEventBus<MediatREventPublisher, CassandraEventStore>(mode, processorOptions);
+    }
+
+    /// <summary>
+    /// Registers EventBus with Outbox pattern using MediatR and Redis
+    /// Ultra-fast event storage (ensure Redis persistence is enabled!)
+    /// WARNING: Enable Redis AOF+RDB for production use
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="mode">The event bus mode (default: Hybrid)</param>
+    /// <param name="processorOptions">Optional outbox processor configuration</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddPersistentEventBusWithMediatRAndRedis(
+        this IServiceCollection services,
+        EventBusMode mode = EventBusMode.Hybrid,
+        OutboxProcessorOptions? processorOptions = null)
+    {
+        return services.AddPersistentEventBus<MediatREventPublisher, RedisEventStore>(mode, processorOptions);
+    }
+
+    /// <summary>
+    /// Registers EventBus with Outbox pattern using InMemoryEventPublisher and MongoDB
+    /// Zero framework dependencies with MongoDB persistence
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <param name="mode">The event bus mode (default: Hybrid)</param>
+    /// <param name="processorOptions">Optional outbox processor configuration</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection AddPersistentEventBusWithInMemoryAndMongoDB(
+        this IServiceCollection services,
+        EventBusMode mode = EventBusMode.Hybrid,
+        OutboxProcessorOptions? processorOptions = null)
+    {
+        return services.AddPersistentEventBus<InMemoryEventPublisher, MongoDbEventStore>(mode, processorOptions);
+    }
+
+    #endregion
 }
