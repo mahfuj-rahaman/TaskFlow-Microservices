@@ -47,7 +47,10 @@ public class IdempotencyMiddleware
 
                 await _next(context);
 
-                response = await responseBody.ReadAsStringAsync();
+                responseBody.Position = 0;
+                using var reader = new StreamReader(responseBody, leaveOpen: true);
+                response = await reader.ReadToEndAsync();
+                responseBody.Position = 0;
                 await _cache.SetStringAsync(key, response, new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
 
                 responseBody.Position = 0;

@@ -1,6 +1,0 @@
-@TaskFlow.Notif.API_HostAddress = http://localhost:5113
-
-GET {{TaskFlow.Notif.API_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

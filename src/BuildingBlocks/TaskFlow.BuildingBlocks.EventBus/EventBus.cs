@@ -1,4 +1,3 @@
-using MediatR;
 using Microsoft.Extensions.Logging;
 using TaskFlow.BuildingBlocks.Common.Domain;
 using TaskFlow.BuildingBlocks.EventBus.Abstractions;
@@ -6,30 +5,32 @@ using TaskFlow.BuildingBlocks.EventBus.Abstractions;
 namespace TaskFlow.BuildingBlocks.EventBus;
 
 /// <summary>
-/// Implementation of EventBus that publishes domain events both in-process (MediatR)
-/// and to distributed message bus (framework-agnostic via IMessagePublisher)
+/// Implementation of EventBus that publishes domain events both in-process (via IEventPublisher)
+/// and to distributed message bus (via IMessagePublisher)
+/// Framework-agnostic - works with any in-process event publisher (MediatR, Wolverine, custom)
+/// and any message bus (RabbitMQ, Kafka, Azure Service Bus, etc.)
 /// </summary>
 public sealed class EventBus : IEventBus
 {
-    private readonly IMediator _mediator;
+    private readonly IEventPublisher _eventPublisher;
     private readonly IMessagePublisher? _messagePublisher;
     private readonly IIntegrationEventMapper? _eventMapper;
     private readonly ILogger<EventBus> _logger;
 
     public EventBus(
-        IMediator mediator,
+        IEventPublisher eventPublisher,
         ILogger<EventBus> logger,
         IMessagePublisher? messagePublisher = null,
         IIntegrationEventMapper? eventMapper = null)
     {
-        _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
+        _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _messagePublisher = messagePublisher;
         _eventMapper = eventMapper;
     }
 
     /// <summary>
-    /// Publishes a single domain event (in-process via MediatR and/or distributed via message bus)
+    /// Publishes a single domain event (in-process and/or distributed via message bus)
     /// </summary>
     public async Task PublishAsync<TEvent>(TEvent @event, CancellationToken cancellationToken = default)
         where TEvent : IDomainEvent
@@ -46,8 +47,8 @@ public sealed class EventBus : IEventBus
                 @event.GetType().Name,
                 @event.EventId);
 
-            // 1. Publish in-process via MediatR
-            await _mediator.Publish(@event, cancellationToken);
+            // 1. Publish in-process via IEventPublisher (framework-agnostic)
+            await _eventPublisher.PublishAsync(@event, cancellationToken);
 
             // 2. Optionally publish to message bus as integration event
             if (_messagePublisher is not null && _eventMapper is not null)
