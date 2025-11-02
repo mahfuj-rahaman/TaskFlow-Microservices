@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <!-- MassTransit (Framework Option 1) -->
+    <PackageReference Include="AWSSDK.SQS" Version="4.0.2" />
     <PackageReference Include="MassTransit" Version="8.2.5" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.2.5" />
     <PackageReference Include="MassTransit.AmazonSQS" Version="8.2.5" />
