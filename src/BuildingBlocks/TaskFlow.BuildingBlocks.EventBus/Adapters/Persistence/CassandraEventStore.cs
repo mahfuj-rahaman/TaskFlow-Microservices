@@ -146,8 +146,9 @@ public sealed class CassandraEventStore : IEventStore
     {
         // Cassandra supports batch operations for better performance
         var batch = new BatchStatement();
+        var eventsList = events.ToList();
 
-        foreach (var @event in events)
+        foreach (var @event in eventsList)
         {
             var storedEvent = CreateStoredEvent(@event);
 
@@ -171,11 +172,11 @@ public sealed class CassandraEventStore : IEventStore
         try
         {
             await _session.ExecuteAsync(batch);
-            _logger.LogInformation("Saved {Count} events to Cassandra outbox in batch", batch.Count);
+            _logger.LogInformation("Saved {Count} events to Cassandra outbox in batch", eventsList.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save {Count} events to Cassandra outbox", batch.Count);
+            _logger.LogError(ex, "Failed to save {Count} events to Cassandra outbox", eventsList.Count);
             throw;
         }
     }
