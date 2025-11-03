@@ -1,0 +1,210 @@
+# =============================================================================
+# Docker Compose for CI/CD Pipeline
+# =============================================================================
+# This file is used by GitHub Actions for automated deployments
+# Secrets are injected from GitHub Secrets via environment variables
+# =============================================================================
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # API Gateway
+  # ===========================================================================
+  api-gateway:
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-taskflow}/taskflow-api-gateway:${IMAGE_TAG:-latest}
+    container_name: taskflow-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "8443:8081"
+    environment:
+      # Environment
+      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Production}
+      - CLOUD_PROVIDER=${CLOUD_PROVIDER:-}
+
+      # Infrastructure (from appsettings, can be overridden)
+      - Infrastructure__MessagingTechnology=${MESSAGING_TECHNOLOGY:-MassTransit}
+      - Infrastructure__EventBusMode=${EVENTBUS_MODE:-Hybrid}
+
+      # Messaging (RabbitMQ)
+      - Messaging__Provider=${MESSAGING_PROVIDER:-RabbitMQ}
+      - Messaging__Host=${RABBITMQ_HOST:-rabbitmq}
+      - Messaging__Port=${RABBITMQ_PORT:-5672}
+      - Messaging__Username=${RABBITMQ_USERNAME}  # From GitHub Secrets
+      - Messaging__Password=${RABBITMQ_PASSWORD}  # From GitHub Secrets
+
+      # AWS (if using AWS SQS)
+      - Messaging__AwsRegion=${AWS_REGION:-}
+      - Messaging__AwsAccessKey=${AWS_ACCESS_KEY:-}
+      - Messaging__AwsSecretKey=${AWS_SECRET_KEY:-}
+
+      # Azure (if using Azure Service Bus)
+      - Messaging__ConnectionString=${AZURE_SERVICE_BUS_CONNECTION_STRING:-}
+
+      # Service Discovery
+      - Consul__Host=${CONSUL_HOST:-http://consul:8500}
+
+      # Monitoring
+      - Jaeger__AgentHost=${JAEGER_HOST:-jaeger}
+      - Seq__ServerUrl=${SEQ_URL:-http://seq:5341}
+      - Seq__ApiKey=${SEQ_API_KEY:-}
+
+    depends_on:
+      - rabbitmq
+      - consul
+      - redis
+    networks:
+      - taskflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ===========================================================================
+  # User Service (template - replicate for other services)
+  # ===========================================================================
+  # user-service:
+  #   image: ${DOCKER_REGISTRY:-ghcr.io}/${IMAGE_PREFIX:-taskflow}/taskflow-user-service:${IMAGE_TAG:-latest}
+  #   container_name: taskflow-user-service
+  #   restart: unless-stopped
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Production}
+  #     - CLOUD_PROVIDER=${CLOUD_PROVIDER:-}
+  #
+  #     # Database
+  #     - ConnectionStrings__UserDb=Host=${POSTGRES_HOST:-postgres};Port=5432;Database=taskflow_user;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+  #
+  #     # Messaging (read from gateway config or env vars)
+  #     - Infrastructure__MessagingTechnology=${MESSAGING_TECHNOLOGY:-MassTransit}
+  #     - Infrastructure__EventBusMode=${EVENTBUS_MODE:-Hybrid}
+  #     - Messaging__Provider=${MESSAGING_PROVIDER:-RabbitMQ}
+  #     - Messaging__Host=${RABBITMQ_HOST:-rabbitmq}
+  #     - Messaging__Username=${RABBITMQ_USERNAME}
+  #     - Messaging__Password=${RABBITMQ_PASSWORD}
+  #
+  #     # Redis
+  #     - Redis__ConnectionString=${REDIS_HOST:-redis}:6379,password=${REDIS_PASSWORD}
+  #
+  #     # Service Discovery
+  #     - Consul__Host=${CONSUL_HOST:-http://consul:8500}
+  #
+  #   depends_on:
+  #     - postgres
+  #     - rabbitmq
+  #     - redis
+  #   networks:
+  #     - taskflow-network
+
+  # ===========================================================================
+  # Infrastructure Services
+  # ===========================================================================
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: taskflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}          # From GitHub Secrets
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # From GitHub Secrets
+      POSTGRES_DB: ${POSTGRES_DB:-taskflow}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
+    networks:
+      - taskflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: taskflow-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - taskflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: taskflow-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}  # From GitHub Secrets
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}  # From GitHub Secrets
+    ports:
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - taskflow-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  consul:
+    image: consul:1.18
+    container_name: taskflow-consul
+    restart: unless-stopped
+    ports:
+      - "8500:8500"
+    networks:
+      - taskflow-network
+    command: "agent -server -bootstrap-expect=1 -ui -client=0.0.0.0"
+
+  # ===========================================================================
+  # Monitoring Stack (Optional - can be disabled in certain environments)
+  # ===========================================================================
+
+  seq:
+    image: datalust/seq:latest
+    container_name: taskflow-seq
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_API_KEY: ${SEQ_API_KEY:-}
+    ports:
+      - "5341:80"
+    volumes:
+      - seq_data:/data
+    networks:
+      - taskflow-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: taskflow-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"  # UI
+      - "6831:6831/udp"  # Agent
+    environment:
+      COLLECTOR_ZIPKIN_HOST_PORT: ":9411"
+    networks:
+      - taskflow-network
+
+networks:
+  taskflow-network:
+    driver: bridge
+    name: taskflow-network
+
+volumes:
+  postgres_data:
+    name: taskflow-postgres-data
+  redis_data:
+    name: taskflow-redis-data
+  rabbitmq_data:
+    name: taskflow-rabbitmq-data
+  seq_data:
+    name: taskflow-seq-data

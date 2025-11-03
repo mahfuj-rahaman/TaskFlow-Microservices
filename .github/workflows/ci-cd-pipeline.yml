@@ -1,0 +1,262 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, staging ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      cloud_provider:
+        description: 'Cloud provider'
+        required: false
+        type: choice
+        options:
+          - none
+          - aws
+          - azure
+          - gcp
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/taskflow
+
+jobs:
+  # ==========================================================================
+  # Job 1: Build and Test
+  # ==========================================================================
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore TaskFlow.sln
+
+      - name: Build solution
+        run: dotnet build TaskFlow.sln --configuration Release --no-restore
+
+      - name: Run unit tests
+        run: dotnet test TaskFlow.sln --configuration Release --no-build --verbosity normal --filter "FullyQualifiedName~UnitTests" --collect:"XPlat Code Coverage"
+
+      - name: Run integration tests
+        run: dotnet test TaskFlow.sln --configuration Release --no-build --verbosity normal --filter "FullyQualifiedName~IntegrationTests"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: '**/TestResults/**/*'
+
+      - name: Upload code coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: '**/TestResults/**/coverage.cobertura.xml'
+          flags: unittests
+          name: codecov-taskflow
+
+  # ==========================================================================
+  # Job 2: Security Scan
+  # ==========================================================================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ==========================================================================
+  # Job 3: Build Docker Images
+  # ==========================================================================
+  build-docker-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    strategy:
+      matrix:
+        service:
+          - api-gateway
+          # Add more services as they are implemented
+          # - user-service
+          # - catalog-service
+          # - order-service
+          # - notification-service
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.service == 'api-gateway' && 'src/ApiGateway/TaskFlow.Gateway/Dockerfile' || format('src/Services/{0}/Dockerfile', matrix.service) }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:buildcache,mode=max
+          build-args: |
+            BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+
+  # ==========================================================================
+  # Job 4: Deploy to Environment
+  # ==========================================================================
+  deploy:
+    name: Deploy to ${{ needs.set-environment.outputs.environment }}
+    runs-on: ubuntu-latest
+    needs: [build-docker-images, set-environment]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: ${{ needs.set-environment.outputs.environment }}
+      url: ${{ needs.set-environment.outputs.environment_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set environment variables
+        run: |
+          echo "ENVIRONMENT=${{ needs.set-environment.outputs.environment }}" >> $GITHUB_ENV
+          echo "CLOUD_PROVIDER=${{ needs.set-environment.outputs.cloud_provider }}" >> $GITHUB_ENV
+
+      - name: Deploy to AWS
+        if: needs.set-environment.outputs.cloud_provider == 'aws'
+        run: |
+          echo "Deploying to AWS ECS/EKS"
+          # Add AWS deployment logic here
+          # ./scripts/deploy-aws.sh
+
+      - name: Deploy to Azure
+        if: needs.set-environment.outputs.cloud_provider == 'azure'
+        run: |
+          echo "Deploying to Azure AKS/Container Apps"
+          # Add Azure deployment logic here
+          # ./scripts/deploy-azure.sh
+
+      - name: Deploy to GCP
+        if: needs.set-environment.outputs.cloud_provider == 'gcp'
+        run: |
+          echo "Deploying to GCP GKE"
+          # Add GCP deployment logic here
+          # ./scripts/deploy-gcp.sh
+
+      - name: Deploy to Docker Compose (Development/Staging)
+        if: needs.set-environment.outputs.cloud_provider == 'none'
+        run: |
+          echo "Deploying using Docker Compose"
+          # ./scripts/deploy-docker-compose.sh
+
+  # ==========================================================================
+  # Job: Set Environment (determines deployment target)
+  # ==========================================================================
+  set-environment:
+    name: Determine Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      cloud_provider: ${{ steps.set-env.outputs.cloud_provider }}
+      environment_url: ${{ steps.set-env.outputs.environment_url }}
+
+    steps:
+      - name: Set environment based on branch/input
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "cloud_provider=${{ inputs.cloud_provider }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "cloud_provider=aws" >> $GITHUB_OUTPUT
+            echo "environment_url=https://api.taskflow.com" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "cloud_provider=none" >> $GITHUB_OUTPUT
+            echo "environment_url=https://api-staging.taskflow.com" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+            echo "cloud_provider=none" >> $GITHUB_OUTPUT
+            echo "environment_url=http://localhost:8080" >> $GITHUB_OUTPUT
+          fi
+
+  # ==========================================================================
+  # Job: Notify
+  # ==========================================================================
+  notify:
+    name: Notify Status
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always()
+
+    steps:
+      - name: Send notification (Slack/Teams/Email)
+        run: |
+          echo "Deployment status: ${{ needs.deploy.result }}"
+          # Add notification logic here
+          # - Slack webhook
+          # - Microsoft Teams webhook
+          # - Email notification

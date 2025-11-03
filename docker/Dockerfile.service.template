@@ -1,0 +1,80 @@
+# =============================================================================
+# Multi-stage Dockerfile Template for TaskFlow Microservices
+# =============================================================================
+# Usage: Copy this to each service and replace {SERVICE_NAME}
+# Example: User, Catalog, Order, Notification
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Build
+# -----------------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG SERVICE_NAME
+WORKDIR /src
+
+# Copy solution file
+COPY ["TaskFlow.sln", "./"]
+
+# Copy project files for dependency resolution
+COPY ["src/Services/${SERVICE_NAME}/TaskFlow.${SERVICE_NAME}.Domain/TaskFlow.${SERVICE_NAME}.Domain.csproj", "src/Services/${SERVICE_NAME}/TaskFlow.${SERVICE_NAME}.Domain/"]
+COPY ["src/Services/${SERVICE_NAME}/TaskFlow.${SERVICE_NAME}.Application/TaskFlow.${SERVICE_NAME}.Application.csproj", "src/Services/${SERVICE_NAME}/TaskFlow.${SERVICE_NAME}.Application/"]
+COPY ["src/Services/${SERVICE_NAME}/TaskFlow.${SERVICE_NAME}.Infrastructure/TaskFlow.${SERVICE_NAME}.Infrastructure.csproj", "src/Services/${SERVICE_NAME}/TaskFlow.${SERVICE_NAME}.Infrastructure/"]
+COPY ["src/Services/${SERVICE_NAME}/TaskFlow.${SERVICE_NAME}.API/TaskFlow.${SERVICE_NAME}.API.csproj", "src/Services/${SERVICE_NAME}/TaskFlow.${SERVICE_NAME}.API/"]
+
+# Copy BuildingBlocks
+COPY ["src/BuildingBlocks/TaskFlow.BuildingBlocks.Domain/TaskFlow.BuildingBlocks.Domain.csproj", "src/BuildingBlocks/TaskFlow.BuildingBlocks.Domain/"]
+COPY ["src/BuildingBlocks/TaskFlow.BuildingBlocks.Application/TaskFlow.BuildingBlocks.Application.csproj", "src/BuildingBlocks/TaskFlow.BuildingBlocks.Application/"]
+COPY ["src/BuildingBlocks/TaskFlow.BuildingBlocks.Infrastructure/TaskFlow.BuildingBlocks.Infrastructure.csproj", "src/BuildingBlocks/TaskFlow.BuildingBlocks.Infrastructure/"]
+COPY ["src/BuildingBlocks/TaskFlow.BuildingBlocks.EventBus/TaskFlow.BuildingBlocks.EventBus.csproj", "src/BuildingBlocks/TaskFlow.BuildingBlocks.EventBus/"]
+COPY ["src/BuildingBlocks/TaskFlow.BuildingBlocks.Messaging/TaskFlow.BuildingBlocks.Messaging.csproj", "src/BuildingBlocks/TaskFlow.BuildingBlocks.Messaging/"]
+
+# Restore dependencies
+RUN dotnet restore "src/Services/${SERVICE_NAME}/TaskFlow.${SERVICE_NAME}.API/TaskFlow.${SERVICE_NAME}.API.csproj"
+
+# Copy all source code
+COPY . .
+
+# Build the project
+WORKDIR "/src/src/Services/${SERVICE_NAME}/TaskFlow.${SERVICE_NAME}.API"
+RUN dotnet build "TaskFlow.${SERVICE_NAME}.API.csproj" -c Release -o /app/build --no-restore
+
+# -----------------------------------------------------------------------------
+# Stage 2: Publish
+# -----------------------------------------------------------------------------
+FROM build AS publish
+ARG SERVICE_NAME
+RUN dotnet publish "TaskFlow.${SERVICE_NAME}.API.csproj" -c Release -o /app/publish --no-build --no-restore /p:UseAppHost=false
+
+# -----------------------------------------------------------------------------
+# Stage 3: Runtime
+# -----------------------------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+ARG SERVICE_NAME
+WORKDIR /app
+
+# Create non-root user for security
+RUN groupadd -r taskflow && useradd -r -g taskflow taskflow
+
+# Copy published app
+COPY --from=publish /app/publish .
+
+# Set ownership
+RUN chown -R taskflow:taskflow /app
+
+# Switch to non-root user
+USER taskflow
+
+# Expose ports
+EXPOSE 8080
+EXPOSE 8081
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Environment variables
+ENV ASPNETCORE_URLS=http://+:8080;https://+:8081
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Entry point
+ENTRYPOINT dotnet TaskFlow.${SERVICE_NAME}.API.dll

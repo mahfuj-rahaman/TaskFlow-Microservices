@@ -278,3 +278,43 @@ FodyWeavers.xsd
 .backups/
 .temp/
 docs/features/*_data.json
+
+# =============================================================================
+# CI/CD & Secrets (DO NOT COMMIT!)
+# =============================================================================
+# Environment files with secrets
+.env
+.env.*
+!.env.example
+.env.local
+.env.development
+.env.staging
+.env.production
+
+# Secret files
+secrets.json
+appsettings.Secrets.json
+**/appsettings.*.Secrets.json
+
+# Cloud provider credentials
+aws-credentials.json
+azure-credentials.json
+gcp-credentials.json
+*.pem
+*.key
+*.crt
+key.json
+service-account.json
+
+# Kubernetes secrets
+k8s/secrets/**/*.yaml
+!k8s/secrets/**/example.yaml
+
+# Terraform state (may contain secrets)
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Docker compose override with secrets
+docker-compose.override.yml
+
