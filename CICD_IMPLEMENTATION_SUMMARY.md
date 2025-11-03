@@ -30,9 +30,22 @@ Push/PR → Build & Test → Security Scan → Docker Build → Deploy → Notif
 - ✅ Manual workflow dispatch with parameters
 
 **Triggers**:
-- Push to `main`, `develop`, `staging` branches
-- Pull requests to `main`, `develop`
+- Push to `prod`, `main`, `dev` branches
+- Pull requests to `main` (from dev), `prod` (from main)
 - Manual dispatch with environment/cloud selection
+
+**Branching Strategy**:
+```
+dev (open) → main (protected) → prod (protected)
+    ↓            ↓                  ↓
+  CI only    CI + Staging      CI + Production
+```
+
+| Branch | Purpose | Protection | CI/CD Behavior |
+|--------|---------|------------|----------------|
+| **dev** | Development | ❌ None | ✅ Build + Test only |
+| **main** | Staging | ✅ Protected | ✅ Build + Test + Deploy to Staging |
+| **prod** | Production | ✅ Protected | ✅ Build + Test + Deploy to Production |
 
 ---
 
@@ -248,9 +261,9 @@ builder.Configuration.AddEnvironmentVariables();
 ┌─────────────────────────┐
 │  Determine Environment  │
 │                         │
-│  • main → production    │
-│  • staging → staging    │
-│  • develop → dev        │
+│  • prod → production    │
+│  • main → staging       │
+│  • dev → CI only        │
 └──────────┬──────────────┘
            │
     ┌──────┴────────┬──────────────┐
@@ -346,9 +359,15 @@ https://github.com/{owner}/TaskFlow-Microservices/settings/secrets/actions
 
 **Automatic** (on push):
 ```bash
-git add .
-git commit -m "feat: implement new feature"
-git push origin main  # Triggers production deployment
+# Development (CI only)
+git push origin dev  # Triggers build + test only
+
+# Staging deployment
+git push origin main  # Triggers build + test + deploy to staging
+
+# Production deployment (requires PR approval)
+# Create PR: main → prod
+# After approval and merge, triggers deploy to production
 ```
 
 **Manual** (workflow dispatch):
@@ -390,20 +409,21 @@ aws ecs describe-tasks --cluster taskflow-cluster --tasks <task-arn>
 ### CI/CD & Workflows
 1. ✅ `.github/workflows/ci-cd-pipeline.yml` - Main CI/CD pipeline
 2. ✅ `.github/SETUP_SECRETS.md` - Quick setup guide
+3. ✅ `.github/BRANCH_PROTECTION_SETUP.md` - Branch protection guide
 
 ### Docker
-3. ✅ `src/ApiGateway/TaskFlow.Gateway/Dockerfile` - API Gateway Dockerfile
-4. ✅ `docker/Dockerfile.service.template` - Service template
-5. ✅ `docker-compose.ci.yml` - CI/CD compose file
+4. ✅ `src/ApiGateway/TaskFlow.Gateway/Dockerfile` - API Gateway Dockerfile
+5. ✅ `docker/Dockerfile.service.template` - Service template
+6. ✅ `docker-compose.ci.yml` - CI/CD compose file
 
 ### Scripts
-6. ✅ `scripts/deploy-with-secrets.sh` - Main deployment script
-7. ✅ `scripts/deploy-aws.sh` - AWS-specific deployment
-8. ✅ `scripts/common-functions.sh` - Shared functions
+7. ✅ `scripts/deploy-with-secrets.sh` - Main deployment script
+8. ✅ `scripts/deploy-aws.sh` - AWS-specific deployment
+9. ✅ `scripts/common-functions.sh` - Shared functions
 
 ### Documentation
-9. ✅ `docs/CICD_SECRETS_MANAGEMENT.md` - Complete guide (450+ lines)
-10. ✅ `CICD_IMPLEMENTATION_SUMMARY.md` - This file
+10. ✅ `docs/CICD_SECRETS_MANAGEMENT.md` - Complete guide (450+ lines)
+11. ✅ `CICD_IMPLEMENTATION_SUMMARY.md` - This file
 
 ---
 
@@ -500,29 +520,32 @@ var eventBusMode = builder.Configuration["Infrastructure:EventBusMode"];
 1. ✅ CI/CD pipeline implemented
 2. ✅ Secret management configured
 3. ✅ Documentation written
-4. ⏳ Set up GitHub Secrets (follow `.github/SETUP_SECRETS.md`)
-5. ⏳ Create GitHub Environments (dev, staging, prod)
-6. ⏳ Test pipeline with manual workflow dispatch
+4. ✅ Branch protection strategy documented
+5. ⏳ Create prod and dev branches
+6. ⏳ Set up branch protection rules (follow `.github/BRANCH_PROTECTION_SETUP.md`)
+7. ⏳ Set up GitHub Secrets (follow `.github/SETUP_SECRETS.md`)
+8. ⏳ Create GitHub Environments (dev, staging, prod)
+9. ⏳ Test pipeline with manual workflow dispatch
 
 ### Short-term (Week 2-3)
-7. ⏳ Implement health endpoints in all services (`/health`)
-8. ⏳ Create Dockerfiles for User, Catalog, Order, Notification services
-9. ⏳ Update `ci-cd-pipeline.yml` to build all service images
-10. ⏳ Set up monitoring dashboards (Seq, Jaeger)
+10. ⏳ Implement health endpoints in all services (`/health`)
+11. ⏳ Create Dockerfiles for User, Catalog, Order, Notification services
+12. ⏳ Update `ci-cd-pipeline.yml` to build all service images
+13. ⏳ Set up monitoring dashboards (Seq, Jaeger)
 
 ### Medium-term (Month 1-2)
-11. ⏳ Implement AWS ECS/EKS deployment
-12. ⏳ Implement Azure AKS deployment
-13. ⏳ Set up automated secret rotation (AWS Secrets Manager)
-14. ⏳ Configure production database backups
-15. ⏳ Implement blue-green deployments
+14. ⏳ Implement AWS ECS/EKS deployment
+15. ⏳ Implement Azure AKS deployment
+16. ⏳ Set up automated secret rotation (AWS Secrets Manager)
+17. ⏳ Configure production database backups
+18. ⏳ Implement blue-green deployments
 
 ### Long-term (Month 3+)
-16. ⏳ Kubernetes manifests for all services
-17. ⏳ GitOps with ArgoCD/FluxCD
-18. ⏳ Advanced monitoring (Prometheus, Grafana)
-19. ⏳ Load testing in CI/CD pipeline
-20. ⏳ Chaos engineering tests
+19. ⏳ Kubernetes manifests for all services
+20. ⏳ GitOps with ArgoCD/FluxCD
+21. ⏳ Advanced monitoring (Prometheus, Grafana)
+22. ⏳ Load testing in CI/CD pipeline
+23. ⏳ Chaos engineering tests
 
 ---
 
@@ -601,12 +624,12 @@ var eventBusMode = builder.Configuration["Infrastructure:EventBusMode"];
 
 ## Related Documentation
 
+- [Branch Protection Setup](.github/BRANCH_PROTECTION_SETUP.md)
 - [API Gateway Configuration](docs/API_GATEWAY_CONFIGURATION.md)
 - [API Gateway Config Summary](API_GATEWAY_CONFIG_SUMMARY.md)
 - [CICD & Secrets Management](docs/CICD_SECRETS_MANAGEMENT.md)
 - [Setup Secrets Guide](.github/SETUP_SECRETS.md)
 - [Project Context](CLAUDE.md)
-- [Docker Guide](DOCKER.md)
 
 ---
 
