@@ -1,0 +1,112 @@
+# =============================================================================
+# Docker Compose Override for Visual Studio Development
+# =============================================================================
+# This file is automatically used by Visual Studio and docker-compose
+# It overrides settings in docker-compose.yml for local development
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # API GATEWAY - Development Overrides
+  # ===========================================================================
+  api-gateway:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_HTTP_PORTS=8080
+    ports:
+      - "5000:8080"  # Map to localhost:5000
+      - "5080:8081"  # HTTPS port (if needed)
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+    labels:
+      - "com.microsoft.visualstudio.debuggee.program=dotnet"
+      - "com.microsoft.visualstudio.debuggee.workingdirectory=/app"
+
+  # ===========================================================================
+  # IDENTITY SERVICE - Development Overrides
+  # ===========================================================================
+  identity-service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "5006:8080"
+      - "5086:8081"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+    labels:
+      - "com.microsoft.visualstudio.debuggee.program=dotnet"
+      - "com.microsoft.visualstudio.debuggee.workingdirectory=/app"
+
+  # ===========================================================================
+  # USER SERVICE - Development Overrides
+  # ===========================================================================
+  user-service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "5001:8080"
+      - "5081:8081"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+    labels:
+      - "com.microsoft.visualstudio.debuggee.program=dotnet"
+      - "com.microsoft.visualstudio.debuggee.workingdirectory=/app"
+
+  # ===========================================================================
+  # TASK SERVICE - Development Overrides
+  # ===========================================================================
+  task-service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "5005:8080"
+      - "5085:8081"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+    labels:
+      - "com.microsoft.visualstudio.debuggee.program=dotnet"
+      - "com.microsoft.visualstudio.debuggee.workingdirectory=/app"
+
+  # ===========================================================================
+  # ADMIN SERVICE - Development Overrides
+  # ===========================================================================
+  admin-service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "5007:8080"
+      - "5087:8081"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+    labels:
+      - "com.microsoft.visualstudio.debuggee.program=dotnet"
+      - "com.microsoft.visualstudio.debuggee.workingdirectory=/app"
+
+  # ===========================================================================
+  # NOTIFICATION SERVICE - Development Overrides
+  # ===========================================================================
+  notif-service:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "5004:8080"
+      - "5084:8081"
+    volumes:
+      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+    labels:
+      - "com.microsoft.visualstudio.debuggee.program=dotnet"
+      - "com.microsoft.visualstudio.debuggee.workingdirectory=/app"
