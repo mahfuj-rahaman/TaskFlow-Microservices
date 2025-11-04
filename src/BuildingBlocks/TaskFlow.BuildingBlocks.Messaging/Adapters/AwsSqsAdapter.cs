@@ -181,9 +181,42 @@ public class AwsSqsAdapter : IMessageBus, IHostedService
                 return; // Or move to DLQ
             }
 
-            var context = new MessageContext(); // Basic context, can be expanded
+            // Build message context from SQS message attributes
+            var headers = new Dictionary<string, object>();
+            foreach (var attr in message.MessageAttributes)
+            {
+                if (attr.Key != "MessageType")
+                {
+                    object headerValue = attr.Value.StringValue ?? (object?)attr.Value.BinaryValue ?? string.Empty;
+                    headers[attr.Key] = headerValue;
+                }
+            }
 
-            await (Task)handler.GetType().GetMethod("HandleAsync").Invoke(handler, new[] { messageBody, context, cancellationToken });
+            var context = new MessageContext(_sqsClient as IMessageBus, message.Attributes.GetValueOrDefault("ReplyToQueueUrl"))
+            {
+                MessageId = Guid.TryParse(message.MessageId, out var msgId) ? msgId : Guid.NewGuid(),
+                CorrelationId = message.Attributes.TryGetValue("CorrelationId", out var corrId) && Guid.TryParse(corrId, out var correlationGuid) ? correlationGuid : null,
+                ConversationId = message.Attributes.TryGetValue("ConversationId", out var convId) && Guid.TryParse(convId, out var conversationGuid) ? conversationGuid : null,
+                SentTime = message.Attributes.TryGetValue("SentTimestamp", out var sentTime) && long.TryParse(sentTime, out var timestamp)
+                    ? DateTimeOffset.FromUnixTimeMilliseconds(timestamp).UtcDateTime
+                    : null,
+                Headers = headers,
+                SourceAddress = message.Attributes.TryGetValue("SourceAddress", out var source) && Uri.TryCreate(source, UriKind.Absolute, out var sourceUri) ? sourceUri : null,
+                DestinationAddress = _options.QueueUrl != null && Uri.TryCreate(_options.QueueUrl, UriKind.Absolute, out var destUri) ? destUri : null
+            };
+
+            var handleMethod = handler.GetType().GetMethod("HandleAsync");
+            if (handleMethod == null)
+            {
+                _logger.LogError("HandleAsync method not found for handler type {HandlerType}", handler.GetType().Name);
+                return;
+            }
+
+            var result = handleMethod.Invoke(handler, new[] { messageBody, context, cancellationToken });
+            if (result is Task task)
+            {
+                await task;
+            }
 
             // If successful, delete the message
             await _sqsClient.DeleteMessageAsync(_options.QueueUrl, message.ReceiptHandle, cancellationToken);
@@ -199,8 +232,32 @@ public class AwsSqsAdapter : IMessageBus, IHostedService
 // Basic IMessageContext implementation
 public class MessageContext : IMessageContext
 {
-    public Guid MessageId { get; } = Guid.NewGuid();
-    public DateTime SentTime { get; } = DateTime.UtcNow;
-    public Dictionary<string, object> Headers { get; } = new Dictionary<string, object>();
+    private readonly IMessageBus? _messageBus;
+    private readonly string? _replyToQueueUrl;
+
+    public MessageContext(IMessageBus? messageBus = null, string? replyToQueueUrl = null)
+    {
+        _messageBus = messageBus;
+        _replyToQueueUrl = replyToQueueUrl;
+    }
+
+    public Guid MessageId { get; init; } = Guid.NewGuid();
+    public Guid? CorrelationId { get; init; }
+    public Guid? ConversationId { get; init; }
+    public DateTime? SentTime { get; init; } = DateTime.UtcNow;
+    public IReadOnlyDictionary<string, object> Headers { get; init; } = new Dictionary<string, object>();
+    public Uri? SourceAddress { get; init; }
+    public Uri? DestinationAddress { get; init; }
+
+    public async Task RespondAsync<TResponse>(TResponse response, CancellationToken cancellationToken = default)
+        where TResponse : class
+    {
+        if (_messageBus == null || string.IsNullOrEmpty(_replyToQueueUrl))
+        {
+            throw new InvalidOperationException("Cannot respond to a message without a message bus or reply-to queue URL");
+        }
+
+        await _messageBus.SendAsync(new Uri(_replyToQueueUrl), response, cancellationToken);
+    }
 }
 

@@ -12,18 +12,32 @@ public static class AwsSqsExtensions
 {
     public static IServiceCollection AddAwsSqsMessageBus(this IServiceCollection services, IConfiguration configuration, params Assembly[] assemblies)
     {
-        services.Configure<AwsSqsOptions>(configuration.GetSection(AwsSqsOptions.SectionName));
+        var section = configuration.GetSection(AwsSqsOptions.SectionName);
+        services.Configure<AwsSqsOptions>(options => section.Bind(options));
 
         services.AddSingleton<IMessageBus, AwsSqsAdapter>();
         services.AddHostedService(sp => (AwsSqsAdapter)sp.GetRequiredService<IMessageBus>());
 
+        // Register message handlers from provided assemblies
         if (assemblies.Length > 0)
         {
-            services.Scan(s => s
-                .FromAssemblies(assemblies)
-                .AddClasses(c => c.AssignableTo(typeof(IMessageHandler<>)))
-                .AsImplementedInterfaces()
-                .WithScopedLifetime());
+            foreach (var assembly in assemblies)
+            {
+                var handlerTypes = assembly.GetTypes()
+                    .Where(t => t.IsClass && !t.IsAbstract &&
+                           t.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageHandler<>)));
+
+                foreach (var handlerType in handlerTypes)
+                {
+                    var interfaceTypes = handlerType.GetInterfaces()
+                        .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageHandler<>));
+
+                    foreach (var interfaceType in interfaceTypes)
+                    {
+                        services.AddScoped(interfaceType, handlerType);
+                    }
+                }
+            }
         }
 
         return services;
