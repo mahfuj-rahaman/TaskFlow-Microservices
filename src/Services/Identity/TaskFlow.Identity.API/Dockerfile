@@ -19,6 +19,7 @@ COPY ["src/Services/Identity/TaskFlow.Identity.Infrastructure/TaskFlow.Identity.
 COPY ["src/Services/Identity/TaskFlow.Identity.API/TaskFlow.Identity.API.csproj", "src/Services/Identity/TaskFlow.Identity.API/"]
 
 # Restore dependencies
+ENV NUGET_PACKAGES_DOWNLOAD_TIMEOUT=300
 RUN dotnet restore "src/Services/Identity/TaskFlow.Identity.API/TaskFlow.Identity.API.csproj"
 
 # Copy everything else

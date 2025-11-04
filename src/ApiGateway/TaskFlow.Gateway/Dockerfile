@@ -23,13 +23,13 @@ COPY . .
 
 # Build the project
 WORKDIR "/src/src/ApiGateway/TaskFlow.Gateway"
-RUN dotnet build "TaskFlow.Gateway.csproj" -c Release -o /app/build --no-restore
+RUN dotnet build "TaskFlow.Gateway.csproj" -c Release -o /app/build
 
 # -----------------------------------------------------------------------------
 # Stage 2: Publish
 # -----------------------------------------------------------------------------
 FROM build AS publish
-RUN dotnet publish "TaskFlow.Gateway.csproj" -c Release -o /app/publish --no-build --no-restore /p:UseAppHost=false
+RUN dotnet publish "TaskFlow.Gateway.csproj" -c Release -o /app/publish
 
 # -----------------------------------------------------------------------------
 # Stage 3: Runtime

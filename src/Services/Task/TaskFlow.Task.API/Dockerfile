@@ -19,6 +19,7 @@ COPY ["src/Services/Task/TaskFlow.Task.Infrastructure/TaskFlow.Task.Infrastructu
 COPY ["src/Services/Task/TaskFlow.Task.API/TaskFlow.Task.API.csproj", "src/Services/Task/TaskFlow.Task.API/"]
 
 # Restore dependencies
+ENV NUGET_PACKAGES_DOWNLOAD_TIMEOUT=300
 RUN dotnet restore "src/Services/Task/TaskFlow.Task.API/TaskFlow.Task.API.csproj"
 
 # Copy everything else

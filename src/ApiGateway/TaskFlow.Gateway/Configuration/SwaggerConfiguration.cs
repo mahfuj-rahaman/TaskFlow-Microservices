@@ -1,4 +1,9 @@
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Swagger;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using TaskFlow.Gateway.Services;
 
 namespace TaskFlow.Gateway.Configuration;
 
@@ -25,6 +30,9 @@ public static class SwaggerConfiguration
     public static IServiceCollection AddSwaggerDocumentation(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddEndpointsApiExplorer();
+
+        // Register aggregation services
+        services.AddSingleton<SwaggerDocumentAggregator>();
 
         services.AddSwaggerGen(options =>
         {
@@ -277,6 +285,11 @@ You can obtain a JWT token by:
             // SCHEMA CUSTOMIZATION
             // =================================================================
             options.CustomSchemaIds(type => type.FullName);
+
+            // =================================================================
+            // DOCUMENT FILTER FOR AGGREGATION
+            // =================================================================
+            options.DocumentFilter<SwaggerAggregationDocumentFilter>();
         });
 
         return services;

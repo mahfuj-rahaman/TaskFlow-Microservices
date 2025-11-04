@@ -20,6 +20,7 @@
 
 - [Overview](#-overview)
 - [Key Features](#-key-features)
+  - [Centralized API Documentation](#-centralized-api-documentation)
 - [Feature Specifications](#-feature-specifications)
   - [Identity Feature](#1-identity-feature-appuser---authentication--authorization)
   - [User Feature](#2-user-feature---profile-management--hierarchy)
@@ -36,6 +37,7 @@
 - [Project Structure](#-project-structure)
 - [Multi-Cloud Deployment](#-multi-cloud-deployment)
 - [Documentation](#-documentation)
+  - [API Documentation & Swagger](#api-documentation)
 
 ---
 
@@ -117,6 +119,46 @@ Test Coverage:         Unit + Integration + Architecture
 Abstraction Levels:    6+ (BuildingBlocks framework)
 Deployment Targets:    Docker, AWS, Azure, GCP, Kubernetes
 ```
+
+### 📚 **Centralized API Documentation**
+
+- **Unified Swagger UI**: Single interface aggregating all microservice APIs
+- **Service Discovery**: Automatic endpoint discovery from all downstream services
+- **Path Transformation**: Intelligent mapping of service routes to gateway routes
+- **Real-time Updates**: Documentation automatically reflects service changes
+- **Multi-Service Testing**: Test all microservices from one interface
+- **17+ Aggregated Endpoints**: Identity, User, Task, Admin, Notification services
+- **Zero Duplicates**: Smart deduplication ensures clean documentation
+- **Proper Service Prefixes**: Correct path transformations (e.g., `/api/v1/identity/appusers`)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│         🌐 API Gateway - Unified Swagger UI                     │
+│              http://localhost:5000/swagger                       │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │  📚 Aggregated Documentation (17+ Endpoints)            │    │
+│  │  ✅ /api/v1/identity/appusers (Identity Service)        │    │
+│  │  ✅ /api/v1/users/* (User Service)                      │    │
+│  │  ✅ /api/v1/tasks/* (Task Service)                      │    │
+│  │  ✅ /api/v1/admin/* (Admin Service)                     │    │
+│  │  ✅ /api/v1/notifications/* (Notification Service)      │    │
+│  └────────────────────────────────────────────────────────┘    │
+│                             ▼                                    │
+│           SwaggerDocumentAggregator + Path Transformer          │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          ▼                   ▼                   ▼
+    🔐 Identity         👤 User            ✅ Task
+    :5006/swagger      :5001/swagger      :5005/swagger
+          │                   │                   │
+          ▼                   ▼                   ▼
+    👑 Admin           📧 Notification
+    :5007/swagger      :5004/swagger
+```
+
+**Access Point**: `http://localhost:5000/swagger` → Select "🌐 API Gateway (All Services)"
 
 ---
 
@@ -1530,12 +1572,16 @@ docker-compose up -d
 docker-compose logs -f
 
 # Access services
-# → User API:     http://localhost:7001/swagger
-# → Catalog API:  http://localhost:7002/swagger
-# → Order API:    http://localhost:7003/swagger
-# → Seq Logs:     http://localhost:5341
-# → Jaeger:       http://localhost:16686
-# → RabbitMQ:     http://localhost:15672 (guest/guest)
+# → API Gateway (Centralized Swagger): http://localhost:5000/swagger ⭐ RECOMMENDED
+# → Identity Service:  http://localhost:5006/swagger
+# → User Service:      http://localhost:5001/swagger
+# → Task Service:      http://localhost:5005/swagger
+# → Admin Service:     http://localhost:5007/swagger
+# → Notification Svc:  http://localhost:5004/swagger
+# → Seq Logs:          http://localhost:5341
+# → Jaeger Tracing:    http://localhost:16686
+# → RabbitMQ:          http://localhost:15672 (guest/guest)
+# → Consul:            http://localhost:8500
 
 # Stop all services
 docker-compose down
@@ -2534,6 +2580,26 @@ terraform output task_service_url
 | **User** | [User_complete_specification.md](docs/features/User_complete_specification.md) | [User_data.json](docs/features/User_data.json) | Profile management with Master-SubUser hierarchy, invitation system, two-stage registration |
 | **Task** | [Task_complete_specification.md](docs/features/Task_complete_specification.md) | [Task_data.json](docs/features/Task_data.json) | Task management with single-assignee, reassignment, review system, comments with attachments, audit trail |
 | **AdminUser** | [AdminUser_complete_specification.md](docs/features/AdminUser_complete_specification.md) | [AdminUser_data.json](docs/features/AdminUser_data.json) | Admin system with SuperAdmin, user/task management, permissions, audit trail |
+
+### API Documentation
+
+| Document | Purpose |
+|----------|---------|
+| **[SWAGGER_AGGREGATION_GUIDE.md](SWAGGER_AGGREGATION_GUIDE.md)** | ⭐ Complete Swagger aggregation guide |
+| **[SWAGGER_AGGREGATION_FIXED.md](SWAGGER_AGGREGATION_FIXED.md)** | Path transformation & deduplication fixes |
+
+**Centralized Swagger UI**:
+- **URL**: http://localhost:5000/swagger
+- **Features**: Aggregates all 5 microservices (Identity, User, Task, Admin, Notification) into single interface
+- **Endpoints**: 17+ unique endpoints with proper service prefixes
+- **Testing**: Test all services from one place with JWT authentication support
+
+**Individual Service Swagger**:
+- Identity: http://localhost:5006/swagger
+- User: http://localhost:5001/swagger
+- Task: http://localhost:5005/swagger
+- Admin: http://localhost:5007/swagger
+- Notification: http://localhost:5004/swagger
 
 ### AI Context Files
 

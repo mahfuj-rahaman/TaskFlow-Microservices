@@ -19,6 +19,7 @@ COPY ["src/Services/Notif/TaskFlow.Notif.Infrastructure/TaskFlow.Notif.Infrastru
 COPY ["src/Services/Notif/TaskFlow.Notif.API/TaskFlow.Notif.API.csproj", "src/Services/Notif/TaskFlow.Notif.API/"]
 
 # Restore dependencies
+ENV NUGET_PACKAGES_DOWNLOAD_TIMEOUT=300
 RUN dotnet restore "src/Services/Notif/TaskFlow.Notif.API/TaskFlow.Notif.API.csproj"
 
 # Copy everything else

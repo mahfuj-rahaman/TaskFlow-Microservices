@@ -143,6 +143,12 @@ builder.Services.AddSingleton<IConsulClient, ConsulClient>(p => new ConsulClient
 builder.Services.AddDistributedMemoryCache();
 
 // =============================================================================
+// 🌐 HTTP CLIENT FACTORY (for Swagger forwarding)
+// =============================================================================
+
+builder.Services.AddHttpClient();
+
+// =============================================================================
 // 📚 SWAGGER / OPENAPI DOCUMENTATION
 // =============================================================================
 
@@ -154,8 +160,7 @@ builder.Services.AddSwaggerDocumentation(builder.Configuration);
 // =============================================================================
 
 builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
-    .AddServiceDiscoveryDestinationResolver();
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
 // =============================================================================
 // 🏗️ APPLICATION PIPELINE
@@ -174,6 +179,13 @@ if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
 
 // Serve static files (for swagger-custom.css)
 app.UseStaticFiles();
+
+// =============================================================================
+// 📚 SWAGGER FORWARDING MIDDLEWARE
+// =============================================================================
+// This middleware intercepts Swagger JSON requests and forwards them to
+// downstream services, enabling API Gateway to aggregate all service docs
+app.UseMiddleware<SwaggerForwardingMiddleware>();
 
 // Security headers
 app.Use(async (context, next) =>
