@@ -318,3 +318,5 @@ k8s/secrets/**/*.yaml
 # Docker compose override with secrets
 docker-compose.override.yml
 
+# Claude Code (local IDE settings)
+.claude/
