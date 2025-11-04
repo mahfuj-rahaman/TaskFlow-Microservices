@@ -1,22 +1,27 @@
 name: CI/CD Pipeline
 
 # =============================================================================
-# Branching Strategy:
-# - dev:  Open for contributors (CI only: build + test)
-# - main: Protected, requires PR review (CI + Deploy to Staging)
-# - prod: Protected, production deployments (CI + Deploy to Production)
+# Branching Strategy (Three-Tier):
+# - dev:  Open for contributors (CI only: build + test, no deployment)
+# - main: Protected, requires PR review (NO CI/CD - staging only)
+# - prod: Protected, production deployments (Full CI/CD to Production)
+#
+# Workflow:
+# 1. Contributors push to dev → CI runs (build + test)
+# 2. dev → main (PR) → No CI/CD on main branch
+# 3. main → prod (PR) → Full CI/CD deploys to production
 # =============================================================================
 
 on:
   push:
     branches:
-      - prod        # Production deployments (protected)
-      - main        # Staging deployments (protected)
-      - dev         # Development builds (open for contributors)
+      - prod        # Production deployments (protected) - FULL CI/CD
+      - dev         # Development builds (CI only, no deploy)
+      # main is intentionally excluded from push triggers
   pull_request:
     branches:
-      - main        # PRs to main (from dev)
-      - prod        # PRs to prod (from main)
+      - main        # PRs to main (from dev) - CI only
+      - prod        # PRs to prod (from main) - CI only
   workflow_dispatch:
     inputs:
       environment:
@@ -182,10 +187,11 @@ jobs:
     name: Deploy to ${{ needs.set-environment.outputs.environment }}
     runs-on: ubuntu-latest
     needs: [build-docker-images, set-environment]
-    # Only deploy on main (staging) and prod (production) branches, or manual dispatch
+    # Only deploy on prod branch (production), or manual dispatch
     # dev branch: CI only (build + test), no deployment
+    # main branch: NO CI/CD at all (intentionally excluded from push triggers)
     if: |
-      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/prod')) ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/prod') ||
       github.event_name == 'workflow_dispatch'
     environment:
       name: ${{ needs.set-environment.outputs.environment }}
@@ -246,17 +252,13 @@ jobs:
             echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
             echo "cloud_provider=${{ inputs.cloud_provider }}" >> $GITHUB_OUTPUT
           elif [[ "${{ github.ref }}" == "refs/heads/prod" ]]; then
-            # prod branch → production environment (AWS)
+            # prod branch → production environment (AWS/Azure/GCP)
             echo "environment=production" >> $GITHUB_OUTPUT
             echo "cloud_provider=aws" >> $GITHUB_OUTPUT
             echo "environment_url=https://api.taskflow.com" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            # main branch → staging environment (Docker Compose)
-            echo "environment=staging" >> $GITHUB_OUTPUT
-            echo "cloud_provider=none" >> $GITHUB_OUTPUT
-            echo "environment_url=https://api-staging.taskflow.com" >> $GITHUB_OUTPUT
           else
-            # dev branch or feature branches → development (CI only, no deploy)
+            # dev branch → development (CI only, no deploy)
+            # main branch → NO CI/CD (intentionally not triggered)
             echo "environment=development" >> $GITHUB_OUTPUT
             echo "cloud_provider=none" >> $GITHUB_OUTPUT
             echo "environment_url=http://localhost:8080" >> $GITHUB_OUTPUT
