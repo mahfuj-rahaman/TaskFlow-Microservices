@@ -1612,12 +1612,16 @@ dotnet run --project src/Services/Catalog/TaskFlow.Catalog.API
 ❌ **Wrong**: `./scripts/ai-scaffold.sh docs/features/Product_feature.md Catalog`
 
 The scripts automatically:
-- Create files in `docs/features/` folder
+- Create files in `<project-root>/docs/features/` folder (absolute path resolution)
 - Use naming pattern: `{FeatureName}_feature.md` and `{FeatureName}_data.json`
 - Search for specification files by feature name
-- Handle all path resolution internally
+- Handle all path resolution internally (relative to project root)
 
 **Just provide the feature name** (e.g., `Product`, `Order`, `User`) and the scripts do the rest!
+
+**Example**: If project is at `/home/user/TaskFlow-Microservices/`, files are created at:
+- `/home/user/TaskFlow-Microservices/docs/features/Product_feature.md`
+- `/home/user/TaskFlow-Microservices/docs/features/Product_data.json`
 
 ---
 
@@ -1713,26 +1717,27 @@ dotnet build
 
 **Important - No Full Path Required**:
 - You only provide the **feature name** (e.g., `Product`), NOT a file path
-- The script **automatically** creates files in `docs/features/` folder
+- The script **automatically** creates files in `<project-root>/docs/features/` folder
 - File naming pattern: `{FeatureName}_feature.md` and `{FeatureName}_data.json`
+- Path resolution is **absolute** (calculated from script location → project root → docs/features)
 - All path resolution is handled internally by the script
 
 **Examples**:
 ```bash
 # Create Product feature specification for Catalog service
 ./scripts/ai-scaffold.sh Product Catalog
-# ✓ Automatically creates: docs/features/Product_feature.md
-# ✓ Automatically creates: docs/features/Product_data.json
+# ✓ Automatically creates: <project-root>/docs/features/Product_feature.md
+# ✓ Automatically creates: <project-root>/docs/features/Product_data.json
 
 # Create Order feature specification for Order service
 ./scripts/ai-scaffold.sh Order Order
-# ✓ Creates: docs/features/Order_feature.md
-# ✓ Creates: docs/features/Order_data.json
+# ✓ Creates: <project-root>/docs/features/Order_feature.md
+# ✓ Creates: <project-root>/docs/features/Order_data.json
 
 # Create User feature specification for User service
 ./scripts/ai-scaffold.sh User User
-# ✓ Creates: docs/features/User_feature.md
-# ✓ Creates: docs/features/User_data.json
+# ✓ Creates: <project-root>/docs/features/User_feature.md
+# ✓ Creates: <project-root>/docs/features/User_data.json
 ```
 
 **Interactive Questions**:
@@ -1782,14 +1787,14 @@ Question 3: What business rules should be enforced?
 > Stock quantity cannot be negative
 >
 
-✓ Specification created: docs/features/Product_feature.md
-✓ JSON data created: docs/features/Product_data.json
+✓ Specification created: <project-root>/docs/features/Product_feature.md
+✓ JSON data created: <project-root>/docs/features/Product_data.json
 Time: ~5 minutes
 ```
 
-**Generated Files**:
-- `docs/features/Product_feature.md` - Human-readable specification
-- `docs/features/Product_data.json` - Machine-readable data for code generation
+**Generated Files** (absolute paths from project root):
+- `<project-root>/docs/features/Product_feature.md` - Human-readable specification
+- `<project-root>/docs/features/Product_data.json` - Machine-readable data for code generation
 
 ---
 
@@ -1804,29 +1809,30 @@ Time: ~5 minutes
 
 **Important - Automatic File Discovery**:
 - You only provide the **feature name** (e.g., `Product`), NOT a file path
-- The script **automatically** looks for `docs/features/{FeatureName}_data.json`
+- The script **automatically** looks for `<project-root>/docs/features/{FeatureName}_data.json`
+- Path resolution is **absolute** (calculated from script location → project root → docs/features)
 - If the data file is not found, it provides helpful error message with next steps
 - All path resolution is handled internally by the script
 
 **Prerequisites**:
 - Service must be scaffolded first (`scaffold-service.sh`)
 - Feature specification must exist (`ai-scaffold.sh`)
-- File must exist: `docs/features/{FeatureName}_data.json`
+- File must exist: `<project-root>/docs/features/{FeatureName}_data.json`
 
 **Examples**:
 ```bash
 # Generate Product feature code for Catalog service
 ./scripts/generate-from-spec.sh Product Catalog
-# ✓ Reads from: docs/features/Product_data.json
+# ✓ Reads from: <project-root>/docs/features/Product_data.json
 # ✓ Generates 26+ files in Catalog service
 
 # Generate Order feature code for Order service
 ./scripts/generate-from-spec.sh Order Order
-# ✓ Reads from: docs/features/Order_data.json
+# ✓ Reads from: <project-root>/docs/features/Order_data.json
 
 # Generate User feature code for User service
 ./scripts/generate-from-spec.sh User User
-# ✓ Reads from: docs/features/User_data.json
+# ✓ Reads from: <project-root>/docs/features/User_data.json
 ```
 
 **Output**:
