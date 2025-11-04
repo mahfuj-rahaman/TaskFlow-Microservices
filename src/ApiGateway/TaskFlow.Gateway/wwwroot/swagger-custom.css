@@ -1,0 +1,302 @@
+/* TaskFlow API Gateway - Custom Swagger UI Styling */
+
+/* =================================================================
+   BRAND COLORS
+   ================================================================= */
+:root {
+    --taskflow-primary: #2563eb;
+    --taskflow-secondary: #7c3aed;
+    --taskflow-success: #10b981;
+    --taskflow-warning: #f59e0b;
+    --taskflow-danger: #ef4444;
+    --taskflow-dark: #1e293b;
+    --taskflow-light: #f8fafc;
+}
+
+/* =================================================================
+   TOPBAR CUSTOMIZATION
+   ================================================================= */
+.swagger-ui .topbar {
+    background: linear-gradient(135deg, var(--taskflow-primary) 0%, var(--taskflow-secondary) 100%);
+    padding: 20px 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.swagger-ui .topbar .download-url-wrapper {
+    display: none;
+}
+
+.swagger-ui .topbar-wrapper img {
+    filter: brightness(0) invert(1);
+}
+
+/* Add custom branding */
+.swagger-ui .topbar::before {
+    content: "TaskFlow API Gateway";
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    margin-right: 20px;
+    padding-left: 20px;
+}
+
+/* =================================================================
+   INFORMATION SECTION
+   ================================================================= */
+.swagger-ui .info {
+    margin: 30px 0;
+}
+
+.swagger-ui .info .title {
+    color: var(--taskflow-primary);
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.swagger-ui .info .description {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* =================================================================
+   OPERATION BADGES
+   ================================================================= */
+.swagger-ui .opblock-tag {
+    border-left: 4px solid var(--taskflow-primary);
+    margin: 20px 0;
+    padding: 10px;
+}
+
+.swagger-ui .opblock.opblock-get {
+    border-color: var(--taskflow-success);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.swagger-ui .opblock.opblock-get .opblock-summary-method {
+    background: var(--taskflow-success);
+}
+
+.swagger-ui .opblock.opblock-post {
+    border-color: var(--taskflow-primary);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.swagger-ui .opblock.opblock-post .opblock-summary-method {
+    background: var(--taskflow-primary);
+}
+
+.swagger-ui .opblock.opblock-put {
+    border-color: var(--taskflow-warning);
+    background: rgba(245, 158, 11, 0.05);
+}
+
+.swagger-ui .opblock.opblock-put .opblock-summary-method {
+    background: var(--taskflow-warning);
+}
+
+.swagger-ui .opblock.opblock-delete {
+    border-color: var(--taskflow-danger);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.swagger-ui .opblock.opblock-delete .opblock-summary-method {
+    background: var(--taskflow-danger);
+}
+
+/* =================================================================
+   AUTHORIZATION BUTTON
+   ================================================================= */
+.swagger-ui .authorization__btn {
+    background: var(--taskflow-primary);
+    border-color: var(--taskflow-primary);
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.swagger-ui .authorization__btn:hover {
+    background: var(--taskflow-secondary);
+    border-color: var(--taskflow-secondary);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.swagger-ui .authorization__btn.locked {
+    background: var(--taskflow-success);
+    border-color: var(--taskflow-success);
+}
+
+.swagger-ui .authorization__btn svg {
+    fill: white;
+}
+
+/* =================================================================
+   BUTTONS
+   ================================================================= */
+.swagger-ui .btn {
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.swagger-ui .btn.execute {
+    background: var(--taskflow-primary);
+    border-color: var(--taskflow-primary);
+    color: white;
+}
+
+.swagger-ui .btn.execute:hover {
+    background: var(--taskflow-secondary);
+    border-color: var(--taskflow-secondary);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.swagger-ui .btn.cancel {
+    background: var(--taskflow-danger);
+    border-color: var(--taskflow-danger);
+}
+
+/* =================================================================
+   RESPONSE SECTION
+   ================================================================= */
+.swagger-ui .responses-inner h4,
+.swagger-ui .responses-inner h5 {
+    color: var(--taskflow-dark);
+    font-weight: 600;
+}
+
+.swagger-ui .response-col_status {
+    font-weight: bold;
+}
+
+.swagger-ui .response-col_status.response-2xx {
+    color: var(--taskflow-success);
+}
+
+.swagger-ui .response-col_status.response-4xx {
+    color: var(--taskflow-warning);
+}
+
+.swagger-ui .response-col_status.response-5xx {
+    color: var(--taskflow-danger);
+}
+
+/* =================================================================
+   MODELS SECTION
+   ================================================================= */
+.swagger-ui .model-box {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.swagger-ui .model-title {
+    color: var(--taskflow-primary);
+    font-weight: bold;
+}
+
+/* =================================================================
+   TRY IT OUT
+   ================================================================= */
+.swagger-ui .try-out__btn {
+    background: var(--taskflow-primary);
+    border-color: var(--taskflow-primary);
+    color: white;
+    font-weight: 600;
+}
+
+.swagger-ui .try-out__btn:hover {
+    background: var(--taskflow-secondary);
+    border-color: var(--taskflow-secondary);
+}
+
+/* =================================================================
+   PARAMETER TABLE
+   ================================================================= */
+.swagger-ui table thead tr th {
+    background: var(--taskflow-light);
+    color: var(--taskflow-dark);
+    font-weight: 600;
+    border-bottom: 2px solid var(--taskflow-primary);
+}
+
+.swagger-ui .parameter__name.required::after {
+    color: var(--taskflow-danger);
+}
+
+/* =================================================================
+   LOADING ANIMATION
+   ================================================================= */
+.swagger-ui .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+/* =================================================================
+   CUSTOM BADGES
+   ================================================================= */
+.swagger-ui .info .description strong {
+    color: var(--taskflow-primary);
+    font-weight: 700;
+}
+
+/* Add emoji support */
+.swagger-ui .info .description::before {
+    content: "📚 ";
+    font-size: 24px;
+}
+
+/* =================================================================
+   SCROLLBAR CUSTOMIZATION
+   ================================================================= */
+.swagger-ui ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.swagger-ui ::-webkit-scrollbar-track {
+    background: var(--taskflow-light);
+}
+
+.swagger-ui ::-webkit-scrollbar-thumb {
+    background: var(--taskflow-primary);
+    border-radius: 5px;
+}
+
+.swagger-ui ::-webkit-scrollbar-thumb:hover {
+    background: var(--taskflow-secondary);
+}
+
+/* =================================================================
+   RESPONSIVE DESIGN
+   ================================================================= */
+@media (max-width: 768px) {
+    .swagger-ui .topbar::before {
+        font-size: 18px;
+        padding-left: 10px;
+    }
+
+    .swagger-ui .info .title {
+        font-size: 24px;
+    }
+}
+
+/* =================================================================
+   DARK MODE SUPPORT (Optional)
+   ================================================================= */
+@media (prefers-color-scheme: dark) {
+    .swagger-ui {
+        background: #0f172a;
+        color: #e2e8f0;
+    }
+
+    .swagger-ui .info .title {
+        color: #60a5fa;
+    }
+
+    .swagger-ui table thead tr th {
+        background: #1e293b;
+        color: #e2e8f0;
+    }
+}

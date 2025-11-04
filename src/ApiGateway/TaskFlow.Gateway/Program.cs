@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
+using TaskFlow.Gateway.Configuration;
 using TaskFlow.Gateway.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -142,6 +143,13 @@ builder.Services.AddSingleton<IConsulClient, ConsulClient>(p => new ConsulClient
 builder.Services.AddDistributedMemoryCache();
 
 // =============================================================================
+// 📚 SWAGGER / OPENAPI DOCUMENTATION
+// =============================================================================
+
+builder.Services.AddControllers();
+builder.Services.AddSwaggerDocumentation(builder.Configuration);
+
+// =============================================================================
 // 🌐 YARP REVERSE PROXY
 // =============================================================================
 
@@ -154,6 +162,18 @@ builder.Services.AddReverseProxy()
 // =============================================================================
 
 var app = builder.Build();
+
+// =============================================================================
+// 📚 SWAGGER UI (Development & Staging)
+// =============================================================================
+
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
+{
+    app.UseSwaggerDocumentation(app.Configuration);
+}
+
+// Serve static files (for swagger-custom.css)
+app.UseStaticFiles();
 
 // Security headers
 app.Use(async (context, next) =>
@@ -198,6 +218,9 @@ app.UseAuthorization();
 
 // Custom idempotency middleware
 app.UseIdempotency();
+
+// Map controllers (for API info endpoints)
+app.MapControllers();
 
 // YARP reverse proxy
 app.MapReverseProxy();
