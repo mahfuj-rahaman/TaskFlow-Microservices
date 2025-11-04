@@ -1604,6 +1604,23 @@ dotnet run --project src/Services/Catalog/TaskFlow.Catalog.API
 
 ## 📜 Executing Scaffold Scripts
 
+### Important: No File Paths Required! 🎯
+
+**All scripts use automatic file discovery** - you NEVER need to provide full file paths:
+
+✅ **Correct**: `./scripts/ai-scaffold.sh Product Catalog`
+❌ **Wrong**: `./scripts/ai-scaffold.sh docs/features/Product_feature.md Catalog`
+
+The scripts automatically:
+- Create files in `docs/features/` folder
+- Use naming pattern: `{FeatureName}_feature.md` and `{FeatureName}_data.json`
+- Search for specification files by feature name
+- Handle all path resolution internally
+
+**Just provide the feature name** (e.g., `Product`, `Order`, `User`) and the scripts do the rest!
+
+---
+
 ### Prerequisites
 
 ```bash
@@ -1694,16 +1711,28 @@ dotnet build
 ./scripts/ai-scaffold.sh <FeatureName> <ServiceName>
 ```
 
+**Important - No Full Path Required**:
+- You only provide the **feature name** (e.g., `Product`), NOT a file path
+- The script **automatically** creates files in `docs/features/` folder
+- File naming pattern: `{FeatureName}_feature.md` and `{FeatureName}_data.json`
+- All path resolution is handled internally by the script
+
 **Examples**:
 ```bash
 # Create Product feature specification for Catalog service
 ./scripts/ai-scaffold.sh Product Catalog
+# ✓ Automatically creates: docs/features/Product_feature.md
+# ✓ Automatically creates: docs/features/Product_data.json
 
 # Create Order feature specification for Order service
 ./scripts/ai-scaffold.sh Order Order
+# ✓ Creates: docs/features/Order_feature.md
+# ✓ Creates: docs/features/Order_data.json
 
 # Create User feature specification for User service
 ./scripts/ai-scaffold.sh User User
+# ✓ Creates: docs/features/User_feature.md
+# ✓ Creates: docs/features/User_data.json
 ```
 
 **Interactive Questions**:
@@ -1773,20 +1802,31 @@ Time: ~5 minutes
 ./scripts/generate-from-spec.sh <FeatureName> <ServiceName>
 ```
 
+**Important - Automatic File Discovery**:
+- You only provide the **feature name** (e.g., `Product`), NOT a file path
+- The script **automatically** looks for `docs/features/{FeatureName}_data.json`
+- If the data file is not found, it provides helpful error message with next steps
+- All path resolution is handled internally by the script
+
 **Prerequisites**:
 - Service must be scaffolded first (`scaffold-service.sh`)
 - Feature specification must exist (`ai-scaffold.sh`)
+- File must exist: `docs/features/{FeatureName}_data.json`
 
 **Examples**:
 ```bash
 # Generate Product feature code for Catalog service
 ./scripts/generate-from-spec.sh Product Catalog
+# ✓ Reads from: docs/features/Product_data.json
+# ✓ Generates 26+ files in Catalog service
 
 # Generate Order feature code for Order service
 ./scripts/generate-from-spec.sh Order Order
+# ✓ Reads from: docs/features/Order_data.json
 
 # Generate User feature code for User service
 ./scripts/generate-from-spec.sh User User
+# ✓ Reads from: docs/features/User_data.json
 ```
 
 **Output**:
