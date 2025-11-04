@@ -6,14 +6,33 @@ This guide explains how to use the service scaffolding script to quickly create 
 
 ## Quick Start
 
+### Complete Workflow (3 Scripts, 3 Minutes)
+
 ```bash
-# Create a new microservice
+# 1. Scaffold the service structure (boilerplate only)
 ./scripts/scaffold-service.sh Identity
 
-# Or any other service name
+# 2. Create feature specification (AI asks questions)
+./scripts/ai-scaffold.sh UserManagement Identity
+
+# 3. Generate feature code from spec (AI generates code)
+./scripts/generate-from-spec.sh UserManagement Identity
+
+# Done! You now have a complete working microservice with:
+# - Clean Architecture structure ✅
+# - Domain entities with business rules ✅
+# - CQRS commands and queries ✅
+# - REST API controllers ✅
+# - Unit and integration tests ✅
+```
+
+### Or Just Scaffold (Manual Coding)
+
+```bash
+# Create empty service structure, then code manually
+./scripts/scaffold-service.sh Identity
 ./scripts/scaffold-service.sh Payment
 ./scripts/scaffold-service.sh Notification
-./scripts/scaffold-service.sh Catalog
 ```
 
 ## What Gets Created
@@ -99,31 +118,59 @@ This is **intentional** - the script provides the foundation, and you or AI agen
 
 ## Workflow: From Scaffolding to Implementation
 
-### Step 1: Scaffold the Service
+### Step 1: Scaffold the Service Structure
 
 ```bash
 ./scripts/scaffold-service.sh Identity
 ```
 
-This creates the complete microservice structure and adds it to the solution.
+This creates the complete microservice structure and adds it to the solution with **boilerplate only** (no business logic).
 
 ### Step 2: Define Your Feature Specification
 
 Create a feature specification document describing what the service should do:
 
 ```bash
-# Create a feature specification (optional but recommended)
-./scripts/ai-scaffold.sh Identity User
+# Create a feature specification with AI assistance
+./scripts/ai-scaffold.sh UserManagement Identity
 ```
 
-This creates `docs/features/Identity_feature.md` where you define:
+This creates `docs/features/UserManagement_feature.md` where you define:
 - Domain model (entities, properties, business rules)
 - Use cases (commands and queries)
 - API endpoints
 - Validation rules
 - Integration requirements
 
-### Step 3: Implement Domain Layer
+The script will ask you questions and generate both:
+- `UserManagement_feature.md` - Human-readable specification
+- `UserManagement_data.json` - Machine-readable data for code generation
+
+### Step 3: Generate Feature Code (Optional - AI-Powered)
+
+**Option A: AI Code Generation** (Recommended for speed)
+
+```bash
+# Automatically generate all feature code from specification
+./scripts/generate-from-spec.sh UserManagement Identity
+```
+
+This reads your specification and generates:
+- Domain entities with business rules
+- Commands and queries (CQRS)
+- Command/Query handlers
+- Validators (FluentValidation)
+- DTOs and mappings
+- Repository interface and implementation
+- EF Core configuration
+- REST API controller
+- Unit and integration tests
+
+**Option B: Manual Implementation** (For custom control)
+
+Implement the domain layer manually (see Step 4 below).
+
+### Step 4: Implement Domain Layer (If Not Using AI Generation)
 
 Based on your feature spec, create domain entities in:
 - `src/Services/Identity/TaskFlow.Identity.Domain/Entities/`

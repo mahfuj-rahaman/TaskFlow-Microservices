@@ -83,6 +83,22 @@ INFRA_PATH="$SERVICE_PATH/TaskFlow.$SERVICE_NAME.Infrastructure"
 API_PATH="$SERVICE_PATH/TaskFlow.$SERVICE_NAME.API"
 TESTS_PATH="$PROJECT_ROOT/tests"
 
+# Check if service exists (was scaffolded)
+SERVICE_EXISTS=false
+if [ -f "$API_PATH/TaskFlow.$SERVICE_NAME.API.csproj" ]; then
+    SERVICE_EXISTS=true
+    print_info "Service '$SERVICE_NAME' already exists (scaffolded)"
+else
+    print_warning "Service '$SERVICE_NAME' not found!"
+    print_info "You should first run: ./scripts/scaffold-service.sh $SERVICE_NAME"
+    read -p "Do you want to continue anyway? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_error "Aborting. Please scaffold the service first."
+        exit 1
+    fi
+fi
+
 # Create directories
 print_section "Creating Directory Structure"
 
@@ -140,12 +156,19 @@ print_section "Generating Tests"
 generate_unit_tests "$FEATURE_NAME" "$SERVICE_NAME" "$TESTS_PATH"
 generate_integration_tests "$FEATURE_NAME" "$SERVICE_NAME" "$TESTS_PATH"
 
-# Generate Project Files (.csproj)
-print_section "Generating Project Files"
-generate_domain_csproj "$SERVICE_NAME" "$DOMAIN_PATH"
-generate_application_csproj "$SERVICE_NAME" "$APP_PATH"
-generate_infrastructure_csproj "$SERVICE_NAME" "$INFRA_PATH"
-generate_api_csproj "$SERVICE_NAME" "$API_PATH"
+# Generate Project Files (.csproj) - only if service doesn't exist yet
+if [ "$SERVICE_EXISTS" = false ]; then
+    print_section "Generating Project Files"
+    print_warning "Service not scaffolded - creating .csproj files"
+    print_info "Recommendation: Use './scripts/scaffold-service.sh $SERVICE_NAME' instead"
+    generate_domain_csproj "$SERVICE_NAME" "$DOMAIN_PATH"
+    generate_application_csproj "$SERVICE_NAME" "$APP_PATH"
+    generate_infrastructure_csproj "$SERVICE_NAME" "$INFRA_PATH"
+    generate_api_csproj "$SERVICE_NAME" "$API_PATH"
+else
+    print_section "Skipping Project Files"
+    print_info "Service already scaffolded - .csproj files exist"
+fi
 
 # Summary
 print_section "Generation Complete!"

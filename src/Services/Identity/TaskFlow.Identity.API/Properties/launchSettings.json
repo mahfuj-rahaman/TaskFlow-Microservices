@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "TaskFlow.Identity.API": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:62884;http://localhost:62885"
+    }
+  }
+}
