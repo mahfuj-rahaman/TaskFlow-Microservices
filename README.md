@@ -41,8 +41,6 @@
 
 ## 🎯 Overview
 
-## 🎯 Overview
-
 **TaskFlow** is an enterprise-grade microservices platform designed to streamline and automate task management within organizations. Built with **.NET 8**, it leverages advanced software engineering principles and patterns to provide a robust, scalable, and maintainable solution.
 
 At its core, TaskFlow offers comprehensive functionalities for:
@@ -51,7 +49,7 @@ At its core, TaskFlow offers comprehensive functionalities for:
 - **Administrative Control**: Providing powerful tools for administrators to oversee users and tasks, manage permissions, and ensure system integrity.
 - **Real-time Notifications**: Delivering instant and asynchronous alerts across multiple channels (email, in-app, push, SMS) for critical updates and events.
 
-Beyond its functional capabilities, TaskFlow showcases production-ready implementations of Clean Architecture, Domain-Driven Design, CQRS, Event-Driven Architecture, and features an **AI-powered code generation system** that reduces development time by **99%+**.
+Beyond its functional capabilities, TaskFlow showcases production-ready implementations of Clean Architecture, Domain-Driven Design, CQRS, Event-Driven Architecture, and features an **AI-powered code generation system** with a **3-script workflow** (Scaffold → Specify → Generate) that reduces development time by **99%+** and creates complete working microservices in **7-8 minutes**.
 
 ### Design Philosophy
 
@@ -89,8 +87,10 @@ Our "important stuff":
 
 ### 🤖 **AI-Powered Development**
 
+- **3-Script Workflow**: Scaffold → Specify → Generate (7-8 minutes from nothing to running microservice)
 - **99%+ Development Time Reduction**: Generate complete features in ~2 minutes (vs 5+ hours manual)
 - **26+ Files Per Feature**: Automatically generate Domain, Application, Infrastructure, API, and Test layers
+- **Service Scaffolding**: Create complete Clean Architecture structure with one command (`scaffold-service.sh`)
 - **Update Paradox Solution**: Safely update generated code without losing custom business logic
 - **Interactive Specification**: AI-guided requirements gathering
 - **3-Layer Protection**: [CUSTOM] markers, interactive diffs, partial classes
@@ -346,53 +346,64 @@ Time Saved:                 99.3%
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│                     AI Scaffolding System                           │
+│                     3-Script Workflow System                        │
 └────────────────────────────────────────────────────────────────────┘
                               │
-        ┌─────────────────────┼─────────────────────┐
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐      ┌──────────────┐
-│ ai-scaffold  │    │ generate-    │      │ update-      │
-│    .sh       │───▶│ from-spec.sh │◀────▶│ feature.sh   │
-│              │    │              │      │              │
-│ Interactive  │    │ Code Gen     │      │ Smart Update │
-│ Spec Creator │    │ Orchestrator │      │ (Paradox!)   │
-└──────────────┘    └──────┬───────┘      └──────────────┘
-                           │
-        ┌──────────────────┼──────────────────┐
-        ▼                  ▼                  ▼
-┌─────────────┐  ┌──────────────┐  ┌─────────────┐
-│ generate-   │  │ generate-    │  │ generate-   │
-│ domain.sh   │  │ application  │  │ infra.sh    │
-│             │  │     .sh      │  │             │
-│ • Entity    │  │ • Commands   │  │ • Repo Impl │
-│ • Events    │  │ • Queries    │  │ • EF Config │
-│ • Exception │  │ • Validators │  │             │
-└─────────────┘  └──────────────┘  └─────────────┘
-        │                │                  │
-        └────────────────┼──────────────────┘
-                         ▼
-        ┌────────────────────────────────┐
-        │ generate-api.sh + generate-    │
-        │          tests.sh               │
-        │                                 │
-        │ • REST Controllers              │
-        │ • Unit Tests                    │
-        │ • Integration Tests             │
-        └─────────────────────────────────┘
-                         │
-                         ▼
-        ┌─────────────────────────────────────┐
-        │   26+ Generated Files               │
-        │   ✓ Domain (4 files)                │
-        │   ✓ Application (14 files)          │
-        │   ✓ Infrastructure (2 files)        │
-        │   ✓ API (1 file)                    │
-        │   ✓ Tests (5 files)                 │
-        │   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
-        │   Time: ~2 minutes                  │
-        │   Quality: Production-ready          │
-        └─────────────────────────────────────┘
+        ┌─────────────────────┼─────────────────────┬────────────────┐
+        ▼                     ▼                     ▼                ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐  ┌──────────────┐
+│ scaffold-    │    │ ai-scaffold  │    │ generate-    │  │ update-      │
+│ service.sh   │───▶│    .sh       │───▶│ from-spec.sh │◀─│ feature.sh   │
+│              │    │              │    │              │  │              │
+│ Boilerplate  │    │ Interactive  │    │ Code Gen     │  │ Smart Update │
+│ Structure    │    │ Spec Creator │    │ Orchestrator │  │ (Paradox!)   │
+│ (Step 0)     │    │ (Step 1)     │    │ (Step 2)     │  │ (Updates)    │
+└──────────────┘    └──────────────┘    └──────┬───────┘  └──────────────┘
+  Creates:            Creates:                  │           Preserves:
+  • .csproj files     • feature.md             │           • [CUSTOM] code
+  • Program.cs        • data.json              │           • Partial classes
+  • appsettings.json                           │           • Backups auto
+  • Dockerfile                                  │
+  • Folder structure                            │
+  • Solution refs                               │
+                                                │
+        ┌───────────────────────────────────────┼──────────────────┐
+        ▼                       ▼                                   ▼
+┌─────────────┐      ┌──────────────┐                    ┌─────────────┐
+│ generate-   │      │ generate-    │                    │ generate-   │
+│ domain.sh   │      │ application  │                    │ infra.sh    │
+│             │      │     .sh      │                    │             │
+│ • Entity    │      │ • Commands   │                    │ • Repo Impl │
+│ • Events    │      │ • Queries    │                    │ • EF Config │
+│ • Exception │      │ • Validators │                    │             │
+└─────────────┘      └──────────────┘                    └─────────────┘
+        │                    │                                  │
+        └────────────────────┼──────────────────────────────────┘
+                             ▼
+        ┌──────────────────────────────────────┐
+        │ generate-api.sh + generate-tests.sh  │
+        │                                       │
+        │ • REST Controllers                    │
+        │ • Unit Tests                          │
+        │ • Integration Tests                   │
+        └───────────────────────────────────────┘
+                             │
+                             ▼
+        ┌─────────────────────────────────────────┐
+        │   Complete Microservice                 │
+        │   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+        │   Boilerplate: 4 projects + configs     │
+        │   Feature Code: 26+ files               │
+        │   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+        │   ✓ Domain (4 files)                    │
+        │   ✓ Application (14 files)              │
+        │   ✓ Infrastructure (2 files)            │
+        │   ✓ API (1 file)                        │
+        │   ✓ Tests (5 files)                     │
+        │   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+        │   Time: ~7-8 minutes (total)            │
+        │   Quality: Production-ready              │
+        └─────────────────────────────────────────┘
 ```
 
 ### Generated Artifacts Per Feature
@@ -422,14 +433,35 @@ Time Saved:                 99.3%
 | | **Subtotal** | **5** | |
 | | **TOTAL** | **29** | **Complete feature stack** |
 
-### Workflow: Generate New Feature
+### Workflow: Generate New Microservice + Feature
 
 ```bash
-# Step 1: Create AI-guided specification
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Step 0: Scaffold Service Structure (if new service)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+./scripts/scaffold-service.sh Catalog
+
+# Output:
+# ✓ Created Clean Architecture structure (4 layers)
+# ✓ Created Domain project (TaskFlow.Catalog.Domain)
+# ✓ Created Application project (TaskFlow.Catalog.Application)
+# ✓ Created Infrastructure project (TaskFlow.Catalog.Infrastructure)
+# ✓ Created API project (TaskFlow.Catalog.API)
+# ✓ Generated .csproj files with proper dependencies
+# ✓ Generated Program.cs with Serilog configuration
+# ✓ Generated appsettings.json with database/messaging config
+# ✓ Generated Dockerfile for containerization
+# ✓ Added all projects to solution (TaskFlow.sln)
+# ✓ Ready to build immediately
+#
+# Time: ~30 seconds
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Step 1: Create AI-guided feature specification
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ./scripts/ai-scaffold.sh Product Catalog
 
 # AI asks intelligent questions:
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 1. What is the main purpose of the Product feature?
 #    → Manage product catalog with pricing and inventory
 #
@@ -455,11 +487,16 @@ Time Saved:                 99.3%
 #    → Get all products (paginated)
 #    → Get product by ID
 #    → (press Enter when done)
+#
+# Time: ~5 minutes
 
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # Step 2: Generate complete feature (26+ files in ~2 minutes)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ./scripts/generate-from-spec.sh Product Catalog
 
 # Output:
+# ✓ Service already scaffolded - .csproj files exist
 # ✓ Generated ProductEntity.cs
 # ✓ Generated ProductCreatedDomainEvent.cs
 # ✓ Generated ProductUpdatedDomainEvent.cs
@@ -473,8 +510,8 @@ Time Saved:                 99.3%
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # ✅ Feature generation complete!
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# Time taken: 1m 47s
-# Files generated: 26
+# Time taken: ~2 minutes
+# Files generated: 26+
 # Lines of code: ~1,200
 # Test coverage: 100% (stubs)
 #
@@ -483,6 +520,10 @@ Time Saved:                 99.3%
 # 2. Run: dotnet build
 # 3. Run: dotnet test
 # 4. Customize as needed
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Total Time: ~7-8 minutes (from nothing to running microservice!)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ### Workflow: Update Existing Feature
@@ -1503,31 +1544,60 @@ docker-compose down
 docker-compose down -v
 ```
 
-### Generate Your First Feature (AI-Powered)
+### Create Your First Microservice (Complete Workflow)
 
 ```bash
-# Step 1: Create specification
+# ═══════════════════════════════════════════════════════════
+# Step 1: Scaffold Service Structure (Boilerplate Only)
+# ═══════════════════════════════════════════════════════════
+./scripts/scaffold-service.sh Catalog
+
+# ✓ Creates complete Clean Architecture structure
+# ✓ 4 layer projects (.csproj) with proper dependencies
+# ✓ Program.cs with Serilog and health checks
+# ✓ appsettings.json with database/messaging config
+# ✓ Dockerfile for deployment
+# ✓ Adds all projects to solution
+# ✓ Ready to build immediately
+# Time: ~30 seconds
+
+# ═══════════════════════════════════════════════════════════
+# Step 2: Create Feature Specification (AI-Guided)
+# ═══════════════════════════════════════════════════════════
 ./scripts/ai-scaffold.sh Product Catalog
 
-# AI will ask:
+# AI will ask intelligent questions:
 # - What is the main purpose?
-# - What properties?
+# - What properties should Product have?
 # - What business rules?
-# - What operations?
+# - What operations beyond CRUD?
+# Time: ~5 minutes (interactive)
 
-# Step 2: Generate code (26+ files in ~2 minutes)
+# ═══════════════════════════════════════════════════════════
+# Step 3: Generate Feature Code (26+ Files in ~2 Minutes)
+# ═══════════════════════════════════════════════════════════
 ./scripts/generate-from-spec.sh Product Catalog
 
-# Step 3: Build and run
-dotnet build
-dotnet run --project src/Services/Catalog/TaskFlow.Catalog.API
-
-# Done! Complete feature with:
 # ✓ Domain layer (Entity, Events, Exceptions)
 # ✓ Application layer (Commands, Queries, Handlers, Validators)
 # ✓ Infrastructure layer (Repository, EF Config)
 # ✓ API layer (REST Controller)
 # ✓ Tests (Unit + Integration)
+# Time: ~2 minutes
+
+# ═══════════════════════════════════════════════════════════
+# Step 4: Build and Run
+# ═══════════════════════════════════════════════════════════
+dotnet build
+dotnet run --project src/Services/Catalog/TaskFlow.Catalog.API
+
+# ✅ Done! Complete working microservice with:
+# ✓ Clean Architecture (4 layers)
+# ✓ CQRS implementation
+# ✓ Domain-Driven Design
+# ✓ REST API with Swagger
+# ✓ Full test coverage (stubs)
+# Total time: ~7-8 minutes (from scratch to running!)
 ```
 
 ---
@@ -1690,8 +1760,9 @@ TaskFlow-Microservices/
 │   └── ... (other service tests)
 │
 ├── 📁 scripts/                                # ⭐⭐⭐ AI Code Generation System
-│   ├── ai-scaffold.sh                         # Interactive specification creator
-│   ├── generate-from-spec.sh                  # Code generator (orchestrator)
+│   ├── scaffold-service.sh                    # ⭐ Service boilerplate scaffolder (Step 0)
+│   ├── ai-scaffold.sh                         # Interactive specification creator (Step 1)
+│   ├── generate-from-spec.sh                  # Code generator orchestrator (Step 2)
 │   ├── update-feature.sh                      # Smart update (preserves custom code)
 │   └── 📁 generators/                         # Modular generators
 │       ├── generate-domain.sh                 # Domain layer generator
@@ -1849,6 +1920,7 @@ terraform output task_service_url
 | **[COMPLETE_SYSTEM_SUMMARY.md](COMPLETE_SYSTEM_SUMMARY.md)** | Complete system overview |
 | **[PROJECT_STATUS.md](PROJECT_STATUS.md)** | Current implementation status |
 | **[SCAFFOLDING_SYSTEM.md](SCAFFOLDING_SYSTEM.md)** | Code generation system overview |
+| **[SCAFFOLDING_GUIDE.md](SCAFFOLDING_GUIDE.md)** | ⭐ Service scaffolding workflow guide |
 
 ### AI Code Generation
 
