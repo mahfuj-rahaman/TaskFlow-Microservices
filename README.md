@@ -1602,6 +1602,555 @@ dotnet run --project src/Services/Catalog/TaskFlow.Catalog.API
 
 ---
 
+## 📜 Executing Scaffold Scripts
+
+### Prerequisites
+
+```bash
+# Ensure you have the required tools
+dotnet --version  # Should be 8.0 or higher
+git --version
+bash --version    # Git Bash on Windows, or native bash on Linux/Mac
+
+# Make scripts executable (Linux/Mac)
+chmod +x scripts/*.sh
+chmod +x scripts/generators/*.sh
+```
+
+### Script Execution Guide
+
+#### 1. **scaffold-service.sh** - Create Service Boilerplate
+
+**Purpose**: Creates a new microservice with complete Clean Architecture structure (4 layers), project files, configurations, and adds to solution.
+
+**Syntax**:
+```bash
+./scripts/scaffold-service.sh <ServiceName>
+```
+
+**Examples**:
+```bash
+# Create a Catalog service
+./scripts/scaffold-service.sh Catalog
+
+# Create a Payment service
+./scripts/scaffold-service.sh Payment
+
+# Create a Notification service
+./scripts/scaffold-service.sh Notification
+```
+
+**What it creates**:
+```
+src/Services/Catalog/
+├── TaskFlow.Catalog.Domain/
+│   ├── TaskFlow.Catalog.Domain.csproj
+│   └── Entities/, Events/, Exceptions/, Enums/ (folders with .gitkeep)
+├── TaskFlow.Catalog.Application/
+│   ├── TaskFlow.Catalog.Application.csproj
+│   └── Features/, DTOs/, Interfaces/, Mappings/ (folders with .gitkeep)
+├── TaskFlow.Catalog.Infrastructure/
+│   ├── TaskFlow.Catalog.Infrastructure.csproj
+│   └── Persistence/, Repositories/, Services/ (folders with .gitkeep)
+└── TaskFlow.Catalog.API/
+    ├── TaskFlow.Catalog.API.csproj
+    ├── Program.cs (with Serilog configuration)
+    ├── appsettings.json (with database/messaging config)
+    ├── Dockerfile
+    └── Controllers/, Middleware/ (folders with .gitkeep)
+```
+
+**Output**:
+```
+✓ Created Clean Architecture structure (4 layers)
+✓ Generated .csproj files with proper dependencies
+✓ Generated Program.cs with Serilog
+✓ Generated appsettings.json
+✓ Generated Dockerfile
+✓ Added 4 projects to TaskFlow.sln
+✓ Ready to build: dotnet build
+Time: ~30 seconds
+```
+
+**Verification**:
+```bash
+# Check if service was added to solution
+dotnet sln list | grep Catalog
+
+# Build to verify everything works
+dotnet build
+
+# Expected output: Build succeeded. 0 Error(s)
+```
+
+---
+
+#### 2. **ai-scaffold.sh** - Create Feature Specification
+
+**Purpose**: Interactive AI-guided tool that asks intelligent questions to create a complete feature specification.
+
+**Syntax**:
+```bash
+./scripts/ai-scaffold.sh <FeatureName> <ServiceName>
+```
+
+**Examples**:
+```bash
+# Create Product feature specification for Catalog service
+./scripts/ai-scaffold.sh Product Catalog
+
+# Create Order feature specification for Order service
+./scripts/ai-scaffold.sh Order Order
+
+# Create User feature specification for User service
+./scripts/ai-scaffold.sh User User
+```
+
+**Interactive Questions**:
+The script will ask you questions like:
+1. **Main Purpose**: What is the main purpose of the Product feature?
+2. **Properties**: What properties should the ProductEntity have? (Name, Price, Description, etc.)
+3. **Business Rules**: What business rules should be enforced? (Price > 0, SKU unique, etc.)
+4. **Operations**: What operations beyond CRUD? (UpdateStock, ApplyDiscount, etc.)
+
+**Example Session**:
+```bash
+$ ./scripts/ai-scaffold.sh Product Catalog
+
+╔════════════════════════════════════════════════════════════════╗
+║   TaskFlow AI Scaffolding System                              ║
+║   Interactive Feature Specification Creator                   ║
+╚════════════════════════════════════════════════════════════════╝
+
+Feature: Product
+Service: Catalog
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Question 1: What is the main purpose of the Product feature?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> Manage product catalog with pricing, inventory, and categories
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Question 2: What properties should the ProductEntity have?
+(Enter one per line, press Enter twice when done)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> Name (string, required, max 200 chars)
+> Description (string, optional, max 1000 chars)
+> Price (decimal, required, > 0)
+> SKU (string, required, unique)
+> StockQuantity (int, required, >= 0)
+> CategoryId (Guid, required)
+> IsActive (bool, default true)
+>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Question 3: What business rules should be enforced?
+(Enter one per line, press Enter twice when done)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> Price must be greater than 0
+> SKU must be unique across all products
+> Cannot delete product with active orders
+> Stock quantity cannot be negative
+>
+
+✓ Specification created: docs/features/Product_feature.md
+✓ JSON data created: docs/features/Product_data.json
+Time: ~5 minutes
+```
+
+**Generated Files**:
+- `docs/features/Product_feature.md` - Human-readable specification
+- `docs/features/Product_data.json` - Machine-readable data for code generation
+
+---
+
+#### 3. **generate-from-spec.sh** - Generate Feature Code
+
+**Purpose**: Reads the feature specification and generates all 26+ code files across 4 architectural layers.
+
+**Syntax**:
+```bash
+./scripts/generate-from-spec.sh <FeatureName> <ServiceName>
+```
+
+**Prerequisites**:
+- Service must be scaffolded first (`scaffold-service.sh`)
+- Feature specification must exist (`ai-scaffold.sh`)
+
+**Examples**:
+```bash
+# Generate Product feature code for Catalog service
+./scripts/generate-from-spec.sh Product Catalog
+
+# Generate Order feature code for Order service
+./scripts/generate-from-spec.sh Order Order
+
+# Generate User feature code for User service
+./scripts/generate-from-spec.sh User User
+```
+
+**Output**:
+```bash
+$ ./scripts/generate-from-spec.sh Product Catalog
+
+╔════════════════════════════════════════════════════════════════╗
+║   TaskFlow Code Generator                                      ║
+║   Generating Clean Architecture code from specification        ║
+╚════════════════════════════════════════════════════════════════╝
+
+ℹ Feature: Product
+ℹ Service: Catalog
+ℹ Data Source: docs/features/Product_data.json
+
+▶ Creating Directory Structure
+✓ Directory structure created
+
+▶ Generating Domain Layer
+✓ Generated ProductEntity.cs
+✓ Generated ProductCreatedDomainEvent.cs
+✓ Generated ProductUpdatedDomainEvent.cs
+✓ Generated ProductNotFoundException.cs
+
+▶ Generating Application Layer
+✓ Generated ProductDto.cs
+✓ Generated CreateProductCommand.cs
+✓ Generated CreateProductCommandHandler.cs
+✓ Generated CreateProductCommandValidator.cs
+✓ Generated UpdateProductCommand.cs
+✓ Generated UpdateProductCommandHandler.cs
+✓ Generated UpdateProductCommandValidator.cs
+✓ Generated DeleteProductCommand.cs
+✓ Generated DeleteProductCommandHandler.cs
+✓ Generated GetAllProductsQuery.cs
+✓ Generated GetAllProductsQueryHandler.cs
+✓ Generated GetProductByIdQuery.cs
+✓ Generated GetProductByIdQueryHandler.cs
+✓ Generated IProductRepository.cs
+
+▶ Generating Infrastructure Layer
+✓ Generated ProductRepository.cs
+✓ Generated ProductConfiguration.cs
+
+▶ Generating API Layer
+✓ Generated ProductsController.cs
+
+▶ Generating Tests
+✓ Generated ProductEntityTests.cs
+✓ Generated CreateProductCommandTests.cs
+✓ Generated UpdateProductCommandTests.cs
+✓ Generated DeleteProductCommandTests.cs
+✓ Generated ProductsControllerTests.cs
+
+▶ Generation Complete!
+
+✓ Successfully generated all files for Product feature
+
+Next steps:
+  1. Review generated code
+  2. Update DbContext to include ProductEntity
+  3. Register repository in DependencyInjection.cs
+  4. Create database migration:
+     cd src/Services/Catalog/TaskFlow.Catalog.Infrastructure
+     dotnet ef migrations add AddProductEntity --startup-project ../TaskFlow.Catalog.API
+  5. Run tests:
+     dotnet test
+  6. Build solution:
+     dotnet build
+
+✓ Feature Product is ready! 🚀
+```
+
+**Generated File Structure**:
+```
+Domain Layer (4 files):
+├── Entities/ProductEntity.cs
+├── Events/ProductCreatedDomainEvent.cs
+├── Events/ProductUpdatedDomainEvent.cs
+└── Exceptions/ProductNotFoundException.cs
+
+Application Layer (14 files):
+├── DTOs/ProductDto.cs
+├── Features/Products/Commands/CreateProduct/
+│   ├── CreateProductCommand.cs
+│   ├── CreateProductCommandHandler.cs
+│   └── CreateProductCommandValidator.cs
+├── Features/Products/Commands/UpdateProduct/
+│   ├── UpdateProductCommand.cs
+│   ├── UpdateProductCommandHandler.cs
+│   └── UpdateProductCommandValidator.cs
+├── Features/Products/Commands/DeleteProduct/
+│   ├── DeleteProductCommand.cs
+│   └── DeleteProductCommandHandler.cs
+├── Features/Products/Queries/GetAllProducts/
+│   ├── GetAllProductsQuery.cs
+│   └── GetAllProductsQueryHandler.cs
+├── Features/Products/Queries/GetProductById/
+│   ├── GetProductByIdQuery.cs
+│   └── GetProductByIdQueryHandler.cs
+└── Interfaces/IProductRepository.cs
+
+Infrastructure Layer (2 files):
+├── Repositories/ProductRepository.cs
+└── Persistence/Configurations/ProductConfiguration.cs
+
+API Layer (1 file):
+└── Controllers/ProductsController.cs
+
+Tests (5 files):
+├── UnitTests/Domain/ProductEntityTests.cs
+├── UnitTests/Application/Commands/CreateProductCommandTests.cs
+├── UnitTests/Application/Commands/UpdateProductCommandTests.cs
+├── UnitTests/Application/Commands/DeleteProductCommandTests.cs
+└── IntegrationTests/Api/ProductsControllerTests.cs
+
+Total: 26+ files generated in ~2 minutes
+```
+
+---
+
+#### 4. **update-feature.sh** - Update Existing Feature (Preserves Custom Code)
+
+**Purpose**: Smart update system that regenerates code while preserving your custom business logic using [CUSTOM] markers.
+
+**Syntax**:
+```bash
+./scripts/update-feature.sh <FeatureName> <ServiceName> [--interactive|--force]
+```
+
+**Options**:
+- `--interactive` (recommended): Shows diffs and asks for confirmation
+- `--force`: Applies all changes without confirmation (dangerous!)
+
+**Examples**:
+```bash
+# Update Product feature (interactive mode - recommended)
+./scripts/update-feature.sh Product Catalog --interactive
+
+# Update User feature (shows diffs before applying)
+./scripts/update-feature.sh User User --interactive
+```
+
+**How to Mark Custom Code**:
+```csharp
+// In your generated file (e.g., ProductEntity.cs)
+public sealed class ProductEntity : AggregateRoot<Guid>
+{
+    // Generated properties
+    public string Name { get; private set; }
+    public decimal Price { get; private set; }
+
+    // Generated methods
+    public static ProductEntity Create(string name, decimal price)
+    {
+        return new ProductEntity(Guid.NewGuid())
+        {
+            Name = name,
+            Price = price
+        };
+    }
+
+    // [CUSTOM] - Your custom business logic starts here
+    public Result ApplyDiscount(decimal discountPercentage)
+    {
+        if (discountPercentage < 0 || discountPercentage > 100)
+        {
+            return Result.Failure("Discount must be between 0 and 100");
+        }
+
+        var discountAmount = Price * (discountPercentage / 100);
+        Price = Price - discountAmount;
+
+        RaiseDomainEvent(new ProductDiscountAppliedDomainEvent(Id, discountPercentage));
+        return Result.Success();
+    }
+
+    public void MarkAsOutOfStock()
+    {
+        StockQuantity = 0;
+        IsActive = false;
+        RaiseDomainEvent(new ProductOutOfStockDomainEvent(Id));
+    }
+    // [CUSTOM]
+}
+```
+
+**Update Example**:
+```bash
+$ ./scripts/update-feature.sh Product Catalog --interactive
+
+🔍 Scanning for changes...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ProductEntity.cs
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Detected [CUSTOM] markers - custom code will be preserved
+
+Changes:
++ public string? CategoryId { get; private set; }
+
+Apply this change? (y/n/d=show full diff): y
+
+✓ Backup created: .backups/ProductEntity_20251104_143022.cs.bak
+✓ Changes applied
+✓ Custom methods preserved:
+  - ApplyDiscount()
+  - MarkAsOutOfStock()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Update complete! ✨
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+---
+
+### Complete Workflow Example
+
+Here's a complete end-to-end example of creating a new Catalog microservice with Product feature:
+
+```bash
+# ═══════════════════════════════════════════════════════════
+# Step 0: Navigate to project root
+# ═══════════════════════════════════════════════════════════
+cd /path/to/TaskFlow-Microservices
+
+# ═══════════════════════════════════════════════════════════
+# Step 1: Scaffold the Catalog Service (30 seconds)
+# ═══════════════════════════════════════════════════════════
+./scripts/scaffold-service.sh Catalog
+
+# Verify it was added to solution
+dotnet sln list | grep Catalog
+
+# Build to ensure everything works
+dotnet build
+
+# ═══════════════════════════════════════════════════════════
+# Step 2: Create Product Feature Specification (5 minutes)
+# ═══════════════════════════════════════════════════════════
+./scripts/ai-scaffold.sh Product Catalog
+
+# Answer the interactive questions:
+# Q: Main purpose?
+# A: Manage product catalog with pricing and inventory
+#
+# Q: Properties?
+# A: Name (string, required, max 200)
+#    Description (string, optional)
+#    Price (decimal, required, > 0)
+#    SKU (string, required, unique)
+#    StockQuantity (int, required, >= 0)
+#    <Enter>
+#
+# Q: Business rules?
+# A: Price must be greater than 0
+#    SKU must be unique
+#    Cannot delete product with active orders
+#    <Enter>
+#
+# Q: Operations?
+# A: Create product
+#    Update product
+#    Delete product
+#    Get all products
+#    Get product by ID
+#    Update stock quantity
+#    <Enter>
+
+# Verify specification files were created
+ls docs/features/Product*
+
+# ═══════════════════════════════════════════════════════════
+# Step 3: Generate Feature Code (2 minutes)
+# ═══════════════════════════════════════════════════════════
+./scripts/generate-from-spec.sh Product Catalog
+
+# Review generated files
+ls -R src/Services/Catalog/
+
+# ═══════════════════════════════════════════════════════════
+# Step 4: Add DbContext and Register Services
+# ═══════════════════════════════════════════════════════════
+# Create DbContext (manually or using template)
+# File: src/Services/Catalog/TaskFlow.Catalog.Infrastructure/Persistence/CatalogDbContext.cs
+
+# Register services in Program.cs
+# File: src/Services/Catalog/TaskFlow.Catalog.API/Program.cs
+# Add:
+# - builder.Services.AddDbContext<CatalogDbContext>(...)
+# - builder.Services.AddScoped<IProductRepository, ProductRepository>()
+# - builder.Services.AddMediatR(...)
+
+# ═══════════════════════════════════════════════════════════
+# Step 5: Create Database Migration
+# ═══════════════════════════════════════════════════════════
+cd src/Services/Catalog/TaskFlow.Catalog.Infrastructure
+dotnet ef migrations add AddProductEntity --startup-project ../TaskFlow.Catalog.API
+dotnet ef database update --startup-project ../TaskFlow.Catalog.API
+
+# ═══════════════════════════════════════════════════════════
+# Step 6: Build and Test
+# ═══════════════════════════════════════════════════════════
+cd ../../../../  # Back to project root
+dotnet build
+dotnet test
+
+# ═══════════════════════════════════════════════════════════
+# Step 7: Run the Service
+# ═══════════════════════════════════════════════════════════
+dotnet run --project src/Services/Catalog/TaskFlow.Catalog.API
+
+# Access Swagger UI
+# → http://localhost:5000/swagger
+
+# ✅ Done! Complete working microservice in 7-8 minutes!
+```
+
+---
+
+### Troubleshooting
+
+#### Script Permission Issues (Linux/Mac)
+```bash
+# Make scripts executable
+chmod +x scripts/*.sh
+chmod +x scripts/generators/*.sh
+```
+
+#### Script Not Found (Windows Git Bash)
+```bash
+# Use explicit bash command
+bash scripts/scaffold-service.sh Catalog
+bash scripts/ai-scaffold.sh Product Catalog
+bash scripts/generate-from-spec.sh Product Catalog
+```
+
+#### Feature Specification Not Found
+```bash
+# Error: Data file not found: docs/features/Product_data.json
+# Solution: Run ai-scaffold.sh first
+./scripts/ai-scaffold.sh Product Catalog
+```
+
+#### Service Not Scaffolded
+```bash
+# Error: Service 'Catalog' not found! You should first run...
+# Solution: Run scaffold-service.sh first
+./scripts/scaffold-service.sh Catalog
+```
+
+#### Build Errors After Generation
+```bash
+# Clean and rebuild
+dotnet clean
+dotnet restore
+dotnet build
+
+# Check for missing dependencies
+dotnet list package --include-transitive
+```
+
+---
+
 ## 🎯 Feature Specifications
 
 TaskFlow includes **4 production-ready feature specifications** that demonstrate the complete system design:
