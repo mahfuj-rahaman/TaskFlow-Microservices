@@ -1,8 +1,19 @@
-# Base Docker Compose configuration
-# This file contains shared services across all environments
+# =============================================================================
+# TaskFlow Microservices - Docker Compose Configuration
+# =============================================================================
+# This is the base configuration for all environments
+# Use with docker-compose.override.yml for local development
+# Use with docker-compose.dev.yml for dev environment
+# Use with docker-compose.prod.yml for production
+# =============================================================================
+
 version: '3.8'
 
 services:
+  # ===========================================================================
+  # INFRASTRUCTURE SERVICES
+  # ===========================================================================
+
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
@@ -12,6 +23,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-taskflow}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
@@ -29,12 +42,14 @@ services:
     container_name: taskflow-redis
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
       - taskflow-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
@@ -48,7 +63,8 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-rabbitmq}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-rabbitmq}
     ports:
-      - "15672:15672"  # Management UI
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -65,16 +81,170 @@ services:
     container_name: taskflow-consul
     restart: unless-stopped
     ports:
-      - "8500:8500"
+      - "8500:8500"  # HTTP API & UI
+      - "8600:8600"  # DNS
     networks:
       - taskflow-network
-    command: "agent -server -bootstrap-expect=1 -ui -client=0.0.0.0"
+    command: "agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=0.0.0.0"
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Seq Logging
+  seq:
+    image: datalust/seq:latest
+    container_name: taskflow-seq
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:80"  # Seq UI
+    volumes:
+      - seq_data:/data
+    networks:
+      - taskflow-network
+
+  # Jaeger Distributed Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: taskflow-jaeger
+    restart: unless-stopped
+    ports:
+      - "6831:6831/udp" # Jaeger agent
+      - "16686:16686"   # Jaeger UI
+    networks:
+      - taskflow-network
+
+  # ===========================================================================
+  # MICROSERVICES
+  # ===========================================================================
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: src/ApiGateway/TaskFlow.Gateway/Dockerfile
+    container_name: taskflow-api-gateway
+    restart: unless-stopped
+    depends_on:
+      consul:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
+      - ASPNETCORE_URLS=http://+:8080
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-TaskFlow-Super-Secret-Key-Change-In-Production-Min-32-Chars!!!}
+      - JwtSettings__Issuer=TaskFlow.ApiGateway
+      - JwtSettings__Audience=TaskFlow.Services
+      - Consul__Host=http://consul:8500
+      - Seq__ServerUrl=http://seq:80
+      - Jaeger__AgentHost=jaeger
+      - RateLimiting__Enabled=true
+      - RateLimiting__PermitLimit=100
+    ports:
+      - "5000:8080"
+    networks:
+      - taskflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Identity Service
+  identity-service:
+    build:
+      context: .
+      dockerfile: src/Services/Identity/TaskFlow.Identity.API/Dockerfile
+    container_name: taskflow-identity-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__IdentityDb=Host=postgres;Port=5432;Database=taskflow_identity;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - DatabaseProvider=PostgreSQL
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-TaskFlow-Super-Secret-Key-Change-In-Production-Min-32-Chars!!!}
+      - JwtSettings__Issuer=TaskFlow.ApiGateway
+      - JwtSettings__Audience=TaskFlow.Services
+      - JwtSettings__ExpirationMinutes=15
+      - Redis__ConnectionString=redis:6379,password=${REDIS_PASSWORD:-redis123}
+      - Messaging__Host=rabbitmq
+      - Messaging__Username=${RABBITMQ_USER:-rabbitmq}
+      - Messaging__Password=${RABBITMQ_PASSWORD:-rabbitmq}
+      - Consul__Host=http://consul:8500
+      - Seq__ServerUrl=http://seq:80
+    ports:
+      - "5006:8080"
+    networks:
+      - taskflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: src/Services/User/TaskFlow.User.API/Dockerfile
+    container_name: taskflow-user-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__UserDb=Host=postgres;Port=5432;Database=taskflow_user;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - DatabaseProvider=PostgreSQL
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-TaskFlow-Super-Secret-Key-Change-In-Production-Min-32-Chars!!!}
+      - Redis__ConnectionString=redis:6379,password=${REDIS_PASSWORD:-redis123}
+      - Messaging__Host=rabbitmq
+      - Messaging__Username=${RABBITMQ_USER:-rabbitmq}
+      - Messaging__Password=${RABBITMQ_PASSWORD:-rabbitmq}
+      - Consul__Host=http://consul:8500
+      - Seq__ServerUrl=http://seq:80
+    ports:
+      - "5001:8080"
+    networks:
+      - taskflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
 
   # Task Service
   task-service:
     build:
       context: .
-      dockerfile: src/Services/Task/Dockerfile
+      dockerfile: src/Services/Task/TaskFlow.Task.API/Dockerfile
     container_name: taskflow-task-service
     restart: unless-stopped
     depends_on:
@@ -84,14 +254,22 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      consul:
+        condition: service_healthy
     environment:
-      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Production}
+      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
+      - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__TaskDb=Host=postgres;Port=5432;Database=taskflow_task;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
       - DatabaseProvider=PostgreSQL
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-TaskFlow-Super-Secret-Key-Change-In-Production-Min-32-Chars!!!}
       - Redis__ConnectionString=redis:6379,password=${REDIS_PASSWORD:-redis123}
-      - RabbitMQ__Host=rabbitmq
-      - RabbitMQ__Username=${RABBITMQ_USER:-rabbitmq}
-      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-rabbitmq}
+      - Messaging__Host=rabbitmq
+      - Messaging__Username=${RABBITMQ_USER:-rabbitmq}
+      - Messaging__Password=${RABBITMQ_PASSWORD:-rabbitmq}
+      - Consul__Host=http://consul:8500
+      - Seq__ServerUrl=http://seq:80
+    ports:
+      - "5005:8080"
     networks:
       - taskflow-network
     healthcheck:
@@ -99,13 +277,97 @@ services:
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 10s
+      start_period: 20s
 
+  # Admin Service
+  admin-service:
+    build:
+      context: .
+      dockerfile: src/Services/Admin/TaskFlow.Admin.API/Dockerfile
+    container_name: taskflow-admin-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__AdminDb=Host=postgres;Port=5432;Database=taskflow_admin;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - DatabaseProvider=PostgreSQL
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-TaskFlow-Super-Secret-Key-Change-In-Production-Min-32-Chars!!!}
+      - Redis__ConnectionString=redis:6379,password=${REDIS_PASSWORD:-redis123}
+      - Messaging__Host=rabbitmq
+      - Messaging__Username=${RABBITMQ_USER:-rabbitmq}
+      - Messaging__Password=${RABBITMQ_PASSWORD:-rabbitmq}
+      - Consul__Host=http://consul:8500
+      - Seq__ServerUrl=http://seq:80
+    ports:
+      - "5007:8080"
+    networks:
+      - taskflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+  # Notification Service
+  notif-service:
+    build:
+      context: .
+      dockerfile: src/Services/Notif/TaskFlow.Notif.API/Dockerfile
+    container_name: taskflow-notif-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__NotifDb=Host=postgres;Port=5432;Database=taskflow_notif;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - DatabaseProvider=PostgreSQL
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-TaskFlow-Super-Secret-Key-Change-In-Production-Min-32-Chars!!!}
+      - Redis__ConnectionString=redis:6379,password=${REDIS_PASSWORD:-redis123}
+      - Messaging__Host=rabbitmq
+      - Messaging__Username=${RABBITMQ_USER:-rabbitmq}
+      - Messaging__Password=${RABBITMQ_PASSWORD:-rabbitmq}
+      - Consul__Host=http://consul:8500
+      - Seq__ServerUrl=http://seq:80
+    ports:
+      - "5004:8080"
+    networks:
+      - taskflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
 networks:
   taskflow-network:
     driver: bridge
     name: taskflow-network
 
+# =============================================================================
+# VOLUMES
+# =============================================================================
 volumes:
   postgres_data:
     name: taskflow-postgres-data
@@ -113,3 +375,5 @@ volumes:
     name: taskflow-redis-data
   rabbitmq_data:
     name: taskflow-rabbitmq-data
+  seq_data:
+    name: taskflow-seq-data
