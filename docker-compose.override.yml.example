@@ -5,8 +5,6 @@
 # It overrides settings in docker-compose.yml for local development
 # =============================================================================
 
-version: '3.8'
-
 services:
   # ===========================================================================
   # API GATEWAY - Development Overrides

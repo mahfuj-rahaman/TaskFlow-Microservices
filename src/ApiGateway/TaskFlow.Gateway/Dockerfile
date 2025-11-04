@@ -12,14 +12,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy solution file
-COPY ["TaskFlow.sln", "./"]
-
-# Copy all project files (for dependency resolution)
+# Copy project file for dependency resolution
 COPY ["src/ApiGateway/TaskFlow.Gateway/TaskFlow.Gateway.csproj", "src/ApiGateway/TaskFlow.Gateway/"]
-COPY ["src/BuildingBlocks/TaskFlow.BuildingBlocks.Domain/TaskFlow.BuildingBlocks.Domain.csproj", "src/BuildingBlocks/TaskFlow.BuildingBlocks.Domain/"]
-COPY ["src/BuildingBlocks/TaskFlow.BuildingBlocks.Application/TaskFlow.BuildingBlocks.Application.csproj", "src/BuildingBlocks/TaskFlow.BuildingBlocks.Application/"]
-COPY ["src/BuildingBlocks/TaskFlow.BuildingBlocks.Infrastructure/TaskFlow.BuildingBlocks.Infrastructure.csproj", "src/BuildingBlocks/TaskFlow.BuildingBlocks.Infrastructure/"]
 
 # Restore dependencies
 RUN dotnet restore "src/ApiGateway/TaskFlow.Gateway/TaskFlow.Gateway.csproj"

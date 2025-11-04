@@ -73,6 +73,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskFlow.Admin.Infrastructu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskFlow.Admin.API", "src\Services\Admin\TaskFlow.Admin.API\TaskFlow.Admin.API.csproj", "{C50B1FC5-3EC1-47EE-9F38-67ACA0904137}"
 EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{8C37DAF2-2262-40DD-837C-7AB1008F1312}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -395,6 +397,12 @@ Global
 		{C50B1FC5-3EC1-47EE-9F38-67ACA0904137}.Release|x64.Build.0 = Release|Any CPU
 		{C50B1FC5-3EC1-47EE-9F38-67ACA0904137}.Release|x86.ActiveCfg = Release|Any CPU
 		{C50B1FC5-3EC1-47EE-9F38-67ACA0904137}.Release|x86.Build.0 = Release|Any CPU
+		{8C37DAF2-2262-40DD-837C-7AB1008F1312}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C37DAF2-2262-40DD-837C-7AB1008F1312}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8C37DAF2-2262-40DD-837C-7AB1008F1312}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8C37DAF2-2262-40DD-837C-7AB1008F1312}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C37DAF2-2262-40DD-837C-7AB1008F1312}.Release|x64.ActiveCfg = Release|Any CPU
+		{8C37DAF2-2262-40DD-837C-7AB1008F1312}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

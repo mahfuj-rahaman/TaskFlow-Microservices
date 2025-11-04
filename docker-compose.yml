@@ -7,8 +7,6 @@
 # Use with docker-compose.prod.yml for production
 # =============================================================================
 
-version: '3.8'
-
 services:
   # ===========================================================================
   # INFRASTRUCTURE SERVICES
@@ -77,7 +75,7 @@ services:
 
   # Consul Service Discovery
   consul:
-    image: consul:1.18
+    image: hashicorp/consul:1.18
     container_name: taskflow-consul
     restart: unless-stopped
     ports:
@@ -99,6 +97,7 @@ services:
     restart: unless-stopped
     environment:
       ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "True"
     ports:
       - "5341:80"  # Seq UI
     volumes:
