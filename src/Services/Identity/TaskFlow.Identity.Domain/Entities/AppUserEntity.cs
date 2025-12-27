@@ -40,11 +40,24 @@ public sealed class AppUserEntity : AggregateRoot<Guid>
     /// <summary>
     /// Creates a new AppUser
     /// </summary>
-    public static AppUserEntity Create()
+    public static AppUserEntity Create(
+        string username,
+        string email,
+        string firstName,
+        string lastName,
+        string passwordHash)
     {
         var entity = new AppUserEntity(Guid.NewGuid())
         {
-            CreatedAt = DateTime.UtcNow
+            Username = username,
+            Email = email,
+            FirstName = firstName,
+            LastName = lastName,
+            PasswordHash = passwordHash,
+            CreatedAt = DateTime.UtcNow,
+            Status = AppUserStatus.Active,
+            Roles = new List<string> { "User" },
+            Permissions = new List<string>()
         };
 
         entity.RaiseDomainEvent(new AppUserCreatedDomainEvent(entity.Id));
@@ -55,8 +68,163 @@ public sealed class AppUserEntity : AggregateRoot<Guid>
     /// <summary>
     /// Updates AppUser information
     /// </summary>
-    public void Update()
+    public void Update(string firstName, string lastName)
     {
+        FirstName = firstName;
+        LastName = lastName;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Updates password
+    /// </summary>
+    public void UpdatePassword(string newPasswordHash)
+    {
+        PasswordHash = newPasswordHash;
+        PasswordResetToken = null;
+        PasswordResetTokenExpiresAt = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Generates email confirmation token
+    /// </summary>
+    public void GenerateEmailConfirmationToken(string token, DateTime expiresAt)
+    {
+        EmailConfirmationToken = token;
+        EmailConfirmationTokenExpiresAt = expiresAt;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Confirms email
+    /// </summary>
+    public void ConfirmEmail()
+    {
+        EmailConfirmed = true;
+        EmailConfirmationToken = null;
+        EmailConfirmationTokenExpiresAt = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Generates password reset token
+    /// </summary>
+    public void GeneratePasswordResetToken(string token, DateTime expiresAt)
+    {
+        PasswordResetToken = token;
+        PasswordResetTokenExpiresAt = expiresAt;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Records successful login
+    /// </summary>
+    public void RecordSuccessfulLogin(string ipAddress)
+    {
+        LastLoginAt = DateTime.UtcNow;
+        LastLoginIp = ipAddress;
+        FailedLoginAttempts = 0;
+        LockoutEndAt = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Records failed login attempt
+    /// </summary>
+    public void RecordFailedLoginAttempt()
+    {
+        FailedLoginAttempts++;
+        UpdatedAt = DateTime.UtcNow;
+
+        if (FailedLoginAttempts >= 5)
+        {
+            LockoutEndAt = DateTime.UtcNow.AddMinutes(30);
+        }
+    }
+
+    /// <summary>
+    /// Checks if account is locked out
+    /// </summary>
+    public bool IsLockedOut()
+    {
+        return LockoutEndAt.HasValue && LockoutEndAt.Value > DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Adds role to user
+    /// </summary>
+    public void AddRole(string role)
+    {
+        if (!Roles.Contains(role))
+        {
+            Roles.Add(role);
+            UpdatedAt = DateTime.UtcNow;
+        }
+    }
+
+    /// <summary>
+    /// Removes role from user
+    /// </summary>
+    public void RemoveRole(string role)
+    {
+        if (Roles.Contains(role))
+        {
+            Roles.Remove(role);
+            UpdatedAt = DateTime.UtcNow;
+        }
+    }
+
+    /// <summary>
+    /// Adds permission to user
+    /// </summary>
+    public void AddPermission(string permission)
+    {
+        if (!Permissions.Contains(permission))
+        {
+            Permissions.Add(permission);
+            UpdatedAt = DateTime.UtcNow;
+        }
+    }
+
+    /// <summary>
+    /// Removes permission from user
+    /// </summary>
+    public void RemovePermission(string permission)
+    {
+        if (Permissions.Contains(permission))
+        {
+            Permissions.Remove(permission);
+            UpdatedAt = DateTime.UtcNow;
+        }
+    }
+
+    /// <summary>
+    /// Enables two-factor authentication
+    /// </summary>
+    public void EnableTwoFactor(string secret)
+    {
+        TwoFactorEnabled = true;
+        TwoFactorSecret = secret;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Disables two-factor authentication
+    /// </summary>
+    public void DisableTwoFactor()
+    {
+        TwoFactorEnabled = false;
+        TwoFactorSecret = null;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Changes user status
+    /// </summary>
+    public void ChangeStatus(AppUserStatus newStatus)
+    {
+        Status = newStatus;
         UpdatedAt = DateTime.UtcNow;
     }
 

@@ -320,3 +320,4 @@ docker-compose.override.yml
 
 # Claude Code (local IDE settings)
 .claude/
+.aider*

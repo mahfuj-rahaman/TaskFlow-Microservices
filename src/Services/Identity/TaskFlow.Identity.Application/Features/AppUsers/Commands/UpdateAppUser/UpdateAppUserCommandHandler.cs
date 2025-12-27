@@ -24,13 +24,11 @@ public sealed class UpdateAppUserCommandHandler : IRequestHandler<UpdateAppUserC
 
         if (entity is null)
         {
-            return Result.Failure(new Error(
-                "AppUser.NotFound",
-                "AppUser not found"));
+            return Result.Failure(
+                new Error("AppUser.NotFound", $"AppUser with ID '{request.Id}' was not found"));
         }
 
-        // TODO: Customize entity update with actual properties from request
-        entity.Update();
+        entity.Update(request.FirstName, request.LastName);
 
         await _repository.UpdateAsync(entity, cancellationToken);
 

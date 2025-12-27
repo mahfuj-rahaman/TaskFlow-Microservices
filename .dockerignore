@@ -26,3 +26,21 @@ README.md
 **/*.suo
 **/.DS_Store
 **/launchSettings.json
+# Documentation and scripts (not needed in builds)
+**/docs
+**/scripts
+**/*.md
+# Test projects (build only what's needed)
+**/tests
+**/*Tests
+**/*Test.csproj
+# Backups and temporary files
+**/.backups
+**/temp
+**/tmp
+**/*.log
+**/*.bak
+# CI/CD files
+**/.github
+**/.gitlab
+**/azure-pipelines.yml

@@ -177,7 +177,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__IdentityDb=Host=postgres;Port=5432;Database=taskflow_identity;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=taskflow_identity;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
       - DatabaseProvider=PostgreSQL
       - JwtSettings__SecretKey=${JWT_SECRET_KEY:-TaskFlow-Super-Secret-Key-Change-In-Production-Min-32-Chars!!!}
       - JwtSettings__Issuer=TaskFlow.ApiGateway
@@ -219,7 +219,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__UserDb=Host=postgres;Port=5432;Database=taskflow_user;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=taskflow_user;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
       - DatabaseProvider=PostgreSQL
       - JwtSettings__SecretKey=${JWT_SECRET_KEY:-TaskFlow-Super-Secret-Key-Change-In-Production-Min-32-Chars!!!}
       - Redis__ConnectionString=redis:6379,password=${REDIS_PASSWORD:-redis123}
@@ -258,7 +258,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT:-Development}
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__TaskDb=Host=postgres;Port=5432;Database=taskflow_task;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=taskflow_task;Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
       - DatabaseProvider=PostgreSQL
       - JwtSettings__SecretKey=${JWT_SECRET_KEY:-TaskFlow-Super-Secret-Key-Change-In-Production-Min-32-Chars!!!}
       - Redis__ConnectionString=redis:6379,password=${REDIS_PASSWORD:-redis123}

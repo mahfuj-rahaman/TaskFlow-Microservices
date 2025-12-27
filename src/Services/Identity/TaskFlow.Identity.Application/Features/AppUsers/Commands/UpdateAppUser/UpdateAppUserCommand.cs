@@ -9,5 +9,6 @@ namespace TaskFlow.Identity.Application.Features.AppUsers.Commands.UpdateAppUser
 public sealed record UpdateAppUserCommand : IRequest<Result>
 {
     public required Guid Id { get; init; }
-    // TODO: Add properties to update for AppUser
+    public required string FirstName { get; init; }
+    public required string LastName { get; init; }
 }

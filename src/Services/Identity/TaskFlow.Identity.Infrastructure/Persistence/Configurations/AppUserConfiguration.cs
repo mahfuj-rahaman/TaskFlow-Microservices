@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TaskFlow.Identity.Domain.Entities;
 
@@ -59,18 +60,31 @@ public sealed class AppUserConfiguration : IEntityTypeConfiguration<AppUserEntit
         builder.Property(x => x.LastLoginIp)
             .HasMaxLength(50);
 
-        // Collections stored as JSON
+        // Collections stored as JSON (PostgreSQL jsonb)
+        var listComparer = new ValueComparer<List<string>>(
+            (c1, c2) => c1!.SequenceEqual(c2!),
+            c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+            c => c.ToList());
+
         builder.Property(x => x.Roles)
             .HasConversion(
                 v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
                 v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>())
-            .HasColumnType("nvarchar(max)");
+            .HasColumnType("jsonb");
+        
+        builder.Property(x => x.Roles)
+            .Metadata
+            .SetValueComparer(listComparer);
 
         builder.Property(x => x.Permissions)
             .HasConversion(
                 v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
                 v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>())
-            .HasColumnType("nvarchar(max)");
+            .HasColumnType("jsonb");
+        
+        builder.Property(x => x.Permissions)
+            .Metadata
+            .SetValueComparer(listComparer);
 
         // Two-factor
         builder.Property(x => x.TwoFactorEnabled)

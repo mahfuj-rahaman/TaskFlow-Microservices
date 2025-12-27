@@ -36,4 +36,24 @@ public interface IAppUserRepository
     /// Checks if a AppUser exists
     /// </summary>
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a AppUser by email
+    /// </summary>
+    Task<AppUserEntity?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a AppUser by username
+    /// </summary>
+    Task<AppUserEntity?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks if email already exists
+    /// </summary>
+    Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks if username already exists
+    /// </summary>
+    Task<bool> UsernameExistsAsync(string username, CancellationToken cancellationToken = default);
 }

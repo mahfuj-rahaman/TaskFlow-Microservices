@@ -8,5 +8,9 @@ namespace TaskFlow.Identity.Application.Features.AppUsers.Commands.CreateAppUser
 /// </summary>
 public sealed record CreateAppUserCommand : IRequest<Result<Guid>>
 {
-    // TODO: Add required properties for creating AppUser
+    public required string Username { get; init; }
+    public required string Email { get; init; }
+    public required string FirstName { get; init; }
+    public required string LastName { get; init; }
+    public required string Password { get; init; }
 }

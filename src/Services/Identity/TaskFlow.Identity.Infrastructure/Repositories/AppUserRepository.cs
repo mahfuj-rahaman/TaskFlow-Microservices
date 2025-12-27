@@ -64,4 +64,36 @@ public sealed class AppUserRepository : IAppUserRepository
         return await _context.Set<AppUserEntity>()
             .AnyAsync(x => x.Id == id, cancellationToken);
     }
+
+    public async Task<AppUserEntity?> GetByEmailAsync(
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<AppUserEntity>()
+            .FirstOrDefaultAsync(x => x.Email == email, cancellationToken);
+    }
+
+    public async Task<AppUserEntity?> GetByUsernameAsync(
+        string username,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<AppUserEntity>()
+            .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
+    }
+
+    public async Task<bool> EmailExistsAsync(
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<AppUserEntity>()
+            .AnyAsync(x => x.Email == email, cancellationToken);
+    }
+
+    public async Task<bool> UsernameExistsAsync(
+        string username,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<AppUserEntity>()
+            .AnyAsync(x => x.Username == username, cancellationToken);
+    }
 }

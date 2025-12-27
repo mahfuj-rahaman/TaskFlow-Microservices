@@ -1,4 +1,15 @@
+using System.Text;
+using FluentValidation;
+using Mapster;
+using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using TaskFlow.Identity.Application.Interfaces;
+using TaskFlow.Identity.Infrastructure.Persistence;
+using TaskFlow.Identity.Infrastructure.Repositories;
+using TaskFlow.Identity.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,15 +63,73 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Add Health Checks
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    ;
 
-// TODO: Add service-specific dependencies here
-// - DbContext
-// - Repositories
-// - MediatR
-// - FluentValidation
-// - Mapster
-// - Authentication/Authorization
+// Add DbContext
+builder.Services.AddDbContext<IdentityDbContext>(options =>
+{
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        b => b.MigrationsAssembly(typeof(IdentityDbContext).Assembly.FullName));
+});
+
+// Add MediatR
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(IAppUserRepository).Assembly);
+});
+
+// Add FluentValidation
+builder.Services.AddValidatorsFromAssembly(typeof(IAppUserRepository).Assembly);
+
+// Add Mapster
+TypeAdapterConfig.GlobalSettings.Scan(typeof(IAppUserRepository).Assembly);
+
+// Add Repositories
+builder.Services.AddScoped<IAppUserRepository, AppUserRepository>();
+
+// Add Services
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+// Add Authentication
+var jwtSecret = builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT secret not configured");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT issuer not configured");
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT audience not configured");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+        ValidateIssuer = true,
+        ValidIssuer = jwtIssuer,
+        ValidateAudience = true,
+        ValidAudience = jwtAudience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
+
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
@@ -73,19 +142,28 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
+app.UseCors("AllowAll");
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
 
+// Auto-migrate database
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
+
 try
 {
-    Log.Information("Starting application...");
+    Log.Information("Starting Identity Service...");
     app.Run();
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "Application failed to start");
+    Log.Fatal(ex, "Identity Service failed to start");
 }
 finally
 {
